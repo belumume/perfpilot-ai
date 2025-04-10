@@ -6,8 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalysisResult } from "@/lib/analysis/analyzer";
-import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode, ExternalLink } from 'lucide-react';
 import { useState } from "react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Badge } from "@/components/ui/badge";
 
 interface AnalysisResultsProps {
   results: {
@@ -58,6 +61,42 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         return <Info className="h-5 w-5" />;
     }
   };
+
+  // Function to determine recommendation priority based on content
+  const getRecommendationPriority = (recommendation: string) => {
+    const lowerCaseRec = recommendation.toLowerCase();
+    if (
+      lowerCaseRec.includes('critical') || 
+      lowerCaseRec.includes('significant') || 
+      lowerCaseRec.includes('important') ||
+      lowerCaseRec.includes('high priority')
+    ) {
+      return 'high';
+    } else if (
+      lowerCaseRec.includes('consider') || 
+      lowerCaseRec.includes('might') || 
+      lowerCaseRec.includes('could') ||
+      lowerCaseRec.includes('low priority')
+    ) {
+      return 'low';
+    }
+    return 'medium';
+  };
+
+  // Function to extract code examples from recommendation text
+  const extractCodeExample = (recommendation: string) => {
+    const codeBlockRegex = /```(?:jsx?|tsx?)?([^`]+)```/;
+    const match = recommendation.match(codeBlockRegex);
+    if (match && match[1]) {
+      return match[1].trim();
+    }
+    return null;
+  };
+
+  // Function to clean recommendation text by removing code blocks
+  const cleanRecommendationText = (recommendation: string) => {
+    return recommendation.replace(/```(?:jsx?|tsx?)?([^`]+)```/g, '').trim();
+  };
   
   return (
     <div className="space-y-8">
@@ -69,7 +108,10 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
+            <div className="flex items-center gap-2">
+              <FileCode className="h-5 w-5 text-primary" />
+              <CardTitle className="text-sm font-medium">Total Issues</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.totalIssues}</div>
@@ -77,7 +119,10 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-sm font-medium">Critical Issues</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{summary.criticalIssues}</div>
@@ -85,7 +130,10 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Warning Issues</CardTitle>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              <CardTitle className="text-sm font-medium">Warning Issues</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-amber-500">{summary.warningIssues}</div>
@@ -93,7 +141,10 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Info Issues</CardTitle>
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              <CardTitle className="text-sm font-medium">Info Issues</CardTitle>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-500">{summary.infoIssues}</div>
@@ -108,18 +159,58 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
             Personalized recommendations based on your code
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="rounded-lg bg-muted p-4">
             <p className="text-sm">{results.recommendations.summary}</p>
           </div>
           
           <div className="space-y-4">
-            {results.recommendations.recommendations.map((recommendation, index) => (
-              <div key={index} className="flex gap-3">
-                <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-sm">{recommendation}</p>
-              </div>
-            ))}
+            {results.recommendations.recommendations.map((recommendation, index) => {
+              const priority = getRecommendationPriority(recommendation);
+              const codeExample = extractCodeExample(recommendation);
+              const cleanText = cleanRecommendationText(recommendation);
+              
+              return (
+                <Card key={index} className="border-l-4 border-l-primary">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-primary" />
+                        <CardTitle className="text-base">Recommendation {index + 1}</CardTitle>
+                      </div>
+                      <Badge variant={
+                        priority === 'high' ? 'destructive' : 
+                        priority === 'medium' ? 'default' : 
+                        'outline'
+                      }>
+                        {priority === 'high' ? 'High Priority' : 
+                         priority === 'medium' ? 'Medium Priority' : 
+                         'Low Priority'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm">{cleanText}</p>
+                    
+                    {codeExample && (
+                      <div className="rounded-md overflow-hidden">
+                        <div className="bg-muted px-4 py-2 text-xs font-medium flex items-center">
+                          <FileCode className="h-4 w-4 mr-2" />
+                          Example Implementation
+                        </div>
+                        <SyntaxHighlighter 
+                          language="jsx" 
+                          style={vscDarkPlus}
+                          customStyle={{ margin: 0, borderRadius: '0 0 0.375rem 0.375rem' }}
+                        >
+                          {codeExample}
+                        </SyntaxHighlighter>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </CardContent>
       </Card>
@@ -167,13 +258,29 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                             <p className="text-xs text-muted-foreground">Line: {issue.lineNumber}</p>
                           )}
                           {issue.code && (
-                            <pre className="mt-2 rounded-md bg-muted p-2 text-xs">{issue.code}</pre>
+                            <div className="mt-2 rounded-md overflow-hidden">
+                              <SyntaxHighlighter 
+                                language="jsx" 
+                                style={vscDarkPlus}
+                                customStyle={{ margin: 0, fontSize: '0.75rem' }}
+                              >
+                                {issue.code}
+                              </SyntaxHighlighter>
+                            </div>
                           )}
                           <div className="mt-2">
                             <h5 className="text-sm font-medium">Recommendation</h5>
                             <p className="text-sm text-muted-foreground">{issue.rule.recommendation}</p>
                             {issue.rule.codeExample && (
-                              <pre className="mt-2 rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">{issue.rule.codeExample}</pre>
+                              <div className="mt-2 rounded-md overflow-hidden">
+                                <SyntaxHighlighter 
+                                  language="jsx" 
+                                  style={vscDarkPlus}
+                                  customStyle={{ margin: 0, fontSize: '0.75rem' }}
+                                >
+                                  {issue.rule.codeExample}
+                                </SyntaxHighlighter>
+                              </div>
                             )}
                           </div>
                           {issue.rule.docs && (
@@ -181,9 +288,10 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                               href={issue.rule.docs} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline inline-block mt-2"
+                              className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-2"
                             >
                               Learn more
+                              <ExternalLink className="h-3 w-3" />
                             </a>
                           )}
                         </div>
@@ -215,13 +323,29 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                           <p className="text-xs text-muted-foreground">Line: {issue.lineNumber}</p>
                         )}
                         {issue.code && (
-                          <pre className="mt-2 rounded-md bg-muted p-2 text-xs">{issue.code}</pre>
+                          <div className="mt-2 rounded-md overflow-hidden">
+                            <SyntaxHighlighter 
+                              language="jsx" 
+                              style={vscDarkPlus}
+                              customStyle={{ margin: 0, fontSize: '0.75rem' }}
+                            >
+                              {issue.code}
+                            </SyntaxHighlighter>
+                          </div>
                         )}
                         <div className="mt-2">
                           <h5 className="text-sm font-medium">Recommendation</h5>
                           <p className="text-sm text-muted-foreground">{issue.rule.recommendation}</p>
                           {issue.rule.codeExample && (
-                            <pre className="mt-2 rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">{issue.rule.codeExample}</pre>
+                            <div className="mt-2 rounded-md overflow-hidden">
+                              <SyntaxHighlighter 
+                                language="jsx" 
+                                style={vscDarkPlus}
+                                customStyle={{ margin: 0, fontSize: '0.75rem' }}
+                              >
+                                {issue.rule.codeExample}
+                              </SyntaxHighlighter>
+                            </div>
                           )}
                         </div>
                         {issue.rule.docs && (
@@ -229,9 +353,10 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                             href={issue.rule.docs} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline inline-block mt-2"
+                            className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-2"
                           >
                             Learn more
+                            <ExternalLink className="h-3 w-3" />
                           </a>
                         )}
                       </div>
