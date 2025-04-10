@@ -62,11 +62,21 @@ export async function POST(request: NextRequest) {
       const allCode = combinedCode.join('');
       
       // Collect all issues for AI recommendations
-      const allIssues = Object.values(fileResults).flatMap(result => result.issues);
+      const allIssues = Object.entries(fileResults).flatMap(([fileName, result]) => {
+        // Add fileName to each issue for context
+        return result.issues.map(issue => ({
+          ...issue,
+          fileName: fileName
+        }));
+      });
       
       // Generate recommendations based on all issues
       const aiRecommendations = await generateRecommendations(
-        { issues: allIssues, summary: aggregateSummary },
+        {
+          issues: allIssues,
+          summary: aggregateSummary,
+          fileResults: fileResults
+        },
         allCode,
         "multiple files"
       );
