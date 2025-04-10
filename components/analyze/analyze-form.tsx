@@ -1,4 +1,4 @@
-// components/analyze/analyze-form.tsx
+// components/analyze/analyze-form.tsx (updated)
 "use client";
 
 import { useState } from "react";
@@ -8,12 +8,21 @@ import { CodeInput } from "./code-input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from 'lucide-react';
 import { toast } from "sonner";
+import { AnalysisResults } from "./analysis-results";
+import { AnalysisResult } from "@/lib/analysis/analyzer";
 
 export function AnalyzeForm() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [codeSource, setCodeSource] = useState<"upload" | "input">("upload");
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [inputCode, setInputCode] = useState("");
+  const [analysisResults, setAnalysisResults] = useState<{
+    analysis: AnalysisResult;
+    recommendations: {
+      summary: string;
+      recommendations: string[];
+    };
+  } | null>(null);
   
   const handleAnalyze = async () => {
     if (codeSource === "upload" && uploadedFiles.length === 0) {
@@ -27,16 +36,31 @@ export function AnalyzeForm() {
     }
     
     setIsAnalyzing(true);
+    setAnalysisResults(null);
     
     try {
-      // TODO: Implement the actual analysis logic
-      // This will be connected to our AI analysis engine
+      const formData = new FormData();
+      formData.append("codeSource", codeSource);
       
-      // Simulate analysis for now
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (codeSource === "upload") {
+        // For now, just analyze the first file
+        formData.append("file", uploadedFiles[0]);
+      } else {
+        formData.append("code", inputCode);
+      }
       
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        throw new Error("Analysis failed");
+      }
+      
+      const result = await response.json();
+      setAnalysisResults(result);
       toast.success("Analysis complete!");
-      // TODO: Display results
     } catch (error) {
       console.error("Analysis error:", error);
       toast.error("An error occurred during analysis");
@@ -47,41 +71,50 @@ export function AnalyzeForm() {
   
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="upload" onValueChange={(value) => setCodeSource(value as "upload" | "input")}>
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="upload">Upload Files</TabsTrigger>
-          <TabsTrigger value="input">Paste Code</TabsTrigger>
-        </TabsList>
-        <TabsContent value="upload" className="mt-6">
-          <CodeUploader 
-            files={uploadedFiles} 
-            setFiles={setUploadedFiles} 
-          />
-        </TabsContent>
-        <TabsContent value="input" className="mt-6">
-          <CodeInput 
-            code={inputCode} 
-            setCode={setInputCode} 
-          />
-        </TabsContent>
-      </Tabs>
-      
-      <div className="flex justify-end">
-        <Button 
-          onClick={handleAnalyze} 
-          disabled={isAnalyzing}
-          size="lg"
-        >
-          {isAnalyzing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            "Analyze Performance"
-          )}
-        </Button>
-      </div>
+      {!analysisResults ? (
+        <>
+          <Tabs defaultValue="upload" onValueChange={(value) => setCodeSource(value as "upload" | "input")}>
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="upload">Upload Files</TabsTrigger>
+              <TabsTrigger value="input">Paste Code</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upload" className="mt-6">
+              <CodeUploader 
+                files={uploadedFiles} 
+                setFiles={setUploadedFiles} 
+              />
+            </TabsContent>
+            <TabsContent value="input" className="mt-6">
+              <CodeInput 
+                code={inputCode} 
+                setCode={setInputCode} 
+              />
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleAnalyze} 
+              disabled={isAnalyzing}
+              size="lg"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Analyzing...
+                </>
+              ) : (
+                "Analyze Performance"
+              )}
+            </Button>
+          </div>
+        </>
+      ) : (
+        <AnalysisResults 
+          results={analysisResults} 
+          onReset={() => setAnalysisResults(null)}
+        />
+      )}
     </div>
   );
 }
