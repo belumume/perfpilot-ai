@@ -1,4 +1,4 @@
-// components/analyze/analyze-form.tsx (updated)
+// components/analyze/analyze-form.tsx
 "use client";
 
 import { useState } from "react";
@@ -17,7 +17,16 @@ export function AnalyzeForm() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [inputCode, setInputCode] = useState("");
   const [analysisResults, setAnalysisResults] = useState<{
-    analysis: AnalysisResult;
+    analysis: AnalysisResult | {
+      fileResults: Record<string, AnalysisResult>;
+      aggregateSummary: {
+        totalIssues: number;
+        criticalIssues: number;
+        warningIssues: number;
+        infoIssues: number;
+        categories: Record<string, number>;
+      };
+    };
     recommendations: {
       summary: string;
       recommendations: string[];
@@ -43,8 +52,10 @@ export function AnalyzeForm() {
       formData.append("codeSource", codeSource);
       
       if (codeSource === "upload") {
-        // For now, just analyze the first file
-        formData.append("file", uploadedFiles[0]);
+        // Append all files to the form data
+        uploadedFiles.forEach(file => {
+          formData.append("file", file);
+        });
       } else {
         formData.append("code", inputCode);
       }
