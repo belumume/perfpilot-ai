@@ -1,9 +1,8 @@
 // components/ui/ai-components.tsx
 import React from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Info, Zap, Code, FileCode, ArrowRight } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, Zap, Code } from 'lucide-react';
 
 // Issue summary component
 export function IssueSummary({ 

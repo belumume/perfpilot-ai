@@ -16,7 +16,7 @@ export interface AnalysisResult {
   };
 }
 
-export async function analyzeCode(code: string, filename?: string): Promise<AnalysisResult> {
+export async function analyzeCode(code: string): Promise<AnalysisResult> {
   const issues: AnalysisResult['issues'] = [];
   
   // Process each rule
@@ -74,7 +74,7 @@ export async function analyzeFiles(files: File[]): Promise<Record<string, Analys
   
   for (const file of files) {
     const code = await file.text();
-    results[file.name] = await analyzeCode(code, file.name);
+    results[file.name] = await analyzeCode(code);
   }
   
   return results;

@@ -1,5 +1,5 @@
 // components/dashboard/dashboard-features.tsx
-import { Gauge, Zap, Image, FileCode, LayoutGrid, Sparkles } from 'lucide-react';
+import { Gauge, Zap, Image as ImageIcon, FileCode, LayoutGrid, Sparkles } from 'lucide-react';
 
 export function DashboardFeatures() {
   return (
@@ -30,11 +30,11 @@ export function DashboardFeatures() {
             <Zap className="h-12 w-12 text-primary" />
             <h3 className="text-xl font-bold">Optimization Suggestions</h3>
             <p className="text-center text-muted-foreground">
-              Get AI-powered recommendations to improve your application's speed.
+              Get AI-powered recommendations to improve your application&apos;s speed.
             </p>
           </div>
           <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
-            <Image className="h-12 w-12 text-primary" />
+            <ImageIcon className="h-12 w-12 text-primary" />
             <h3 className="text-xl font-bold">Image Optimization</h3>
             <p className="text-center text-muted-foreground">
               Identify and fix image-related performance issues using next/image.

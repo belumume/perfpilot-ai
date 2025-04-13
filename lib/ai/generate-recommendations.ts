@@ -6,7 +6,21 @@ import { AnalysisResult } from "../analysis/analyzer";
 // Update the function signature to accept either an AnalysisResult or a multi-file analysis result
 export async function generateRecommendations(
   analysisResult: AnalysisResult | {
-    issues: any[];
+    issues: Array<{
+      rule: {
+        id: string;
+        name: string;
+        description: string;
+        severity: string;
+        category: string;
+        recommendation: string;
+        codeExample?: string;
+        docs?: string;
+      };
+      lineNumber?: number;
+      code?: string;
+      fileName?: string;
+    }>;
     summary: {
       totalIssues: number;
       criticalIssues: number;
@@ -51,7 +65,7 @@ Files analyzed: ${fileNames.join(', ')}
 
 Detected issues across all files:
 ${issues.map(issue => {
-  const fileName = issue.fileName || issue.file || 'Unknown file';
+  const fileName = 'fileName' in issue ? issue.fileName : 'Unknown file';
   return `- ${issue.rule.name} (in ${fileName}): ${issue.rule.description}${issue.lineNumber ? ` (Line ${issue.lineNumber})` : ''}`;
 }).join('\n')}
 
@@ -95,12 +109,12 @@ Provide a concise summary of the performance issues and 3-5 specific, actionable
     model: openai("gpt-4o"),
     prompt,
     temperature: 0.3,
-    max_tokens: 1000,
+    maxTokens: 1000,
   });
   
   // Parse the AI response
-  const summaryMatch = text.match(/Summary:(.*?)(?=Recommendations:|$)/s);
-  const recommendationsMatch = text.match(/Recommendations:(.*)/s);
+  const summaryMatch = text.match(/Summary:([\s\S]*?)(?=Recommendations:|$)/);
+  const recommendationsMatch = text.match(/Recommendations:([\s\S]*)/);
   
   const aiSummary = summaryMatch ? summaryMatch[1].trim() : text;
   let aiRecommendations: string[] = [];

@@ -4,13 +4,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AnalysisResult } from "@/lib/analysis/analyzer";
 import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode, ExternalLink } from 'lucide-react';
 import { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Badge } from "@/components/ui/badge";
+
+// Add type declaration for modules without declaration files
+declare module 'react-syntax-highlighter';
+declare module 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface AnalysisResultsProps {
   results: {
@@ -37,12 +41,12 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   const isMultiFile = results.analysis && 'fileResults' in results.analysis;
   
   // Get the summary data
-  const summary = isMultiFile 
+  const summary = isMultiFile && 'aggregateSummary' in results.analysis 
     ? results.analysis.aggregateSummary 
     : (results.analysis as AnalysisResult).summary;
   
   // Get file results for multi-file analysis
-  const fileResults = isMultiFile 
+  const fileResults = isMultiFile && 'fileResults' in results.analysis
     ? results.analysis.fileResults 
     : { "single-file": results.analysis as AnalysisResult };
   

@@ -1,14 +1,14 @@
 // components/analyze/code-uploader.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, SetStateAction, Dispatch } from "react";
 import { useDropzone } from "react-dropzone";
 import { X, FileCode, Upload } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 
 interface CodeUploaderProps {
   files: File[];
-  setFiles: (files: File[]) => void;
+  setFiles: Dispatch<SetStateAction<File[]>>;
 }
 
 export function CodeUploader({ files, setFiles }: CodeUploaderProps) {
@@ -18,7 +18,7 @@ export function CodeUploader({ files, setFiles }: CodeUploaderProps) {
       /\.(js|jsx|ts|tsx)$/.test(file.name)
     );
     
-    setFiles(prev => [...prev, ...jsFiles]);
+    setFiles((prev: File[]) => [...prev, ...jsFiles]);
   }, [setFiles]);
   
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ 

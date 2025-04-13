@@ -35,7 +35,7 @@ export default function AboutPage() {
                 <Brain className="h-10 w-10 text-primary" />
                 <h3 className="text-xl font-bold">AI-Powered Recommendations</h3>
                 <p className="text-muted-foreground">
-                  Get personalized recommendations from advanced AI models to improve your application's performance.
+                  Get personalized recommendations from advanced AI models to improve your application&apos;s performance.
                 </p>
               </div>
             </CardContent>
@@ -92,7 +92,7 @@ export default function AboutPage() {
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight">Ready to optimize your Next.js app?</h2>
           <p className="text-xl text-muted-foreground max-w-2xl">
-            Try PerfPilot AI now and see how you can improve your application's performance.
+            Try PerfPilot AI now and see how you can improve your application&apos;s performance.
           </p>
           <Link href="/analyze">
             <Button size="lg" className="mt-4">

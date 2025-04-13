@@ -1,6 +1,6 @@
 // app/api/analyze/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { analyzeCode } from "@/lib/analysis/analyzer";
+import { analyzeCode, AnalysisResult } from "@/lib/analysis/analyzer";
 import { generateRecommendations } from "@/lib/ai/generate-recommendations";
 
 export async function POST(request: NextRequest) {
@@ -20,7 +20,29 @@ export async function POST(request: NextRequest) {
       }
       
       // Structure to hold results for each file
-      const fileResults: Record<string, any> = {};
+      const fileResults: Record<string, {
+        issues: Array<{
+          rule: {
+            id: string;
+            name: string;
+            description: string;
+            severity: string;
+            category: string;
+            recommendation: string;
+            codeExample?: string;
+            docs?: string;
+          };
+          lineNumber?: number;
+          code?: string;
+        }>;
+        summary: {
+          totalIssues: number;
+          criticalIssues: number;
+          warningIssues: number;
+          infoIssues: number;
+          categories: Record<string, number>;
+        };
+      }> = {};
       
       // Aggregate summary data
       const aggregateSummary = {
@@ -35,7 +57,7 @@ export async function POST(request: NextRequest) {
       await Promise.all(files.map(async (file) => {
         const code = await file.text();
         const filename = file.name;
-        const result = await analyzeCode(code, filename);
+        const result = await analyzeCode(code);
         
         fileResults[filename] = result;
         
@@ -75,7 +97,7 @@ export async function POST(request: NextRequest) {
         {
           issues: allIssues,
           summary: aggregateSummary,
-          fileResults: fileResults
+          fileResults: fileResults as unknown as Record<string, AnalysisResult>
         },
         allCode,
         "multiple files"
@@ -98,7 +120,7 @@ export async function POST(request: NextRequest) {
         );
       }
       
-      const analysisResult = await analyzeCode(code, "input.tsx");
+      const analysisResult = await analyzeCode(code);
       
       // Generate AI recommendations
       const aiRecommendations = await generateRecommendations(
