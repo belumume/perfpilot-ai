@@ -13,6 +13,8 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
+import rehypeSanitize from 'rehype-sanitize';
 import { Components } from 'react-markdown';
 
 // Add type declaration for modules without declaration files
@@ -93,69 +95,169 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   // Function to extract code examples from recommendation text
   const extractCodeExample = (recommendation: string) => {
     // Match code blocks with or without language specification
-    const codeBlockRegex = /```(?:jsx?|tsx?|javascript|typescript)?([^`]+)```/;
-    const match = recommendation.match(codeBlockRegex);
-    if (match && match[1]) {
-      return match[1].trim();
+    // Support more language identifiers and handle whitespace
+    const codeBlockRegex = /```(?:jsx?|tsx?|javascript|typescript|js|ts|html|css|json|bash|shell|sh)?([^`]+)```/g;
+    const matches = [...recommendation.matchAll(codeBlockRegex)];
+    if (matches.length > 0) {
+      // Return the first code block by default
+      return matches[0][1].trim();
     }
     return null;
   };
 
   // Function to clean recommendation text by removing code blocks
   const cleanRecommendationText = (recommendation: string) => {
-    // Remove code blocks with or without language specification
-    return recommendation.replace(/```(?:jsx?|tsx?|javascript|typescript)?([^`]+)```/g, '').trim();
+    // We'll preserve the original text but replace code blocks with markers
+    return recommendation
+      .replace(/```(?:jsx?|tsx?|javascript|typescript|js|ts|html|css|json|bash|shell|sh)?([^`]+)```/g, '')
+      .replace(/\n\n+/g, '\n\n') // Replace multiple newlines with just two
+      .trim();
   };
 
   // Function to format markdown with custom components
   const MarkdownComponents: Components = {
     // Style links
-    a: (props) => (
+    a: ({ node, className, children, ...props }) => (
       <a 
-        {...props} 
-        className="text-primary hover:underline" 
+        className={`text-primary hover:underline ${className || ''}`}
         target="_blank" 
         rel="noopener noreferrer"
-      />
+        {...props} 
+      >
+        {children}
+      </a>
     ),
     // Style paragraphs
-    p: (props) => (
-      <p {...props} className="text-sm mb-2" />
+    p: ({ node, className, children, ...props }) => (
+      <p className={`mb-2 ${className || ''}`} {...props}>
+        {children}
+      </p>
     ),
     // Style headings
-    h1: (props) => (
-      <h1 {...props} className="text-xl font-bold mb-2" />
+    h1: ({ node, className, children, ...props }) => (
+      <h1 className={`text-xl font-bold mb-2 ${className || ''}`} {...props}>
+        {children}
+      </h1>
     ),
-    h2: (props) => (
-      <h2 {...props} className="text-lg font-bold mb-2" />
+    h2: ({ node, className, children, ...props }) => (
+      <h2 className={`text-lg font-bold mb-2 ${className || ''}`} {...props}>
+        {children}
+      </h2>
     ),
-    h3: (props) => (
-      <h3 {...props} className="text-base font-bold mb-2" />
+    h3: ({ node, className, children, ...props }) => (
+      <h3 className={`text-base font-bold mb-2 ${className || ''}`} {...props}>
+        {children}
+      </h3>
     ),
     // Style lists
-    ul: (props) => (
-      <ul {...props} className="text-sm list-disc pl-5 mb-2" />
+    ul: ({ node, className, children, ...props }) => (
+      <ul className={`list-disc pl-5 mb-2 ${className || ''}`} {...props}>
+        {children}
+      </ul>
     ),
-    ol: (props) => (
-      <ol {...props} className="text-sm list-decimal pl-5 mb-2" />
+    ol: ({ node, className, children, ...props }) => (
+      <ol className={`list-decimal pl-5 mb-2 ${className || ''}`} {...props}>
+        {children}
+      </ol>
     ),
     // Style list items
-    li: (props) => (
-      <li {...props} className="mb-1" />
+    li: ({ node, className, children, ...props }) => (
+      <li className={`mb-1 ${className || ''}`} {...props}>
+        {children}
+      </li>
     ),
     // Style code (inline)
-    code: ({ inline, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
+    code: ({ node, inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || '');
       return inline ? (
-        <code {...props} className="px-1 py-0.5 bg-muted rounded text-xs font-mono">
+        <code 
+          className={`px-1 py-0.5 bg-muted rounded text-xs font-mono ${className || ''}`} 
+          {...props}
+        >
           {children}
         </code>
       ) : (
-        <code {...props} />
+        <code 
+          className={`${className || ''}`}
+          {...props}
+        >
+          {children}
+        </code>
       );
     },
     // Style blockquotes
-    blockquote: (props) => (
-      <blockquote {...props} className="pl-4 border-l-2 border-muted italic my-2" />
+    blockquote: ({ node, className, children, ...props }) => (
+      <blockquote 
+        className={`pl-4 border-l-2 border-muted italic my-2 ${className || ''}`} 
+        {...props}
+      >
+        {children}
+      </blockquote>
+    ),
+    // Handle tables
+    table: ({ node, className, children, ...props }) => (
+      <div className="overflow-x-auto my-4">
+        <table 
+          className={`min-w-full border-collapse ${className || ''}`} 
+          {...props}
+        >
+          {children}
+        </table>
+      </div>
+    ),
+    thead: ({ node, className, children, ...props }) => (
+      <thead 
+        className={`bg-muted ${className || ''}`} 
+        {...props}
+      >
+        {children}
+      </thead>
+    ),
+    tbody: ({ node, className, children, ...props }) => (
+      <tbody 
+        className={`${className || ''}`} 
+        {...props}
+      >
+        {children}
+      </tbody>
+    ),
+    tr: ({ node, className, children, ...props }) => (
+      <tr 
+        className={`border-b border-border ${className || ''}`} 
+        {...props}
+      >
+        {children}
+      </tr>
+    ),
+    th: ({ node, className, children, ...props }) => (
+      <th 
+        className={`px-4 py-2 text-left text-sm font-semibold ${className || ''}`} 
+        {...props}
+      >
+        {children}
+      </th>
+    ),
+    td: ({ node, className, children, ...props }) => (
+      <td 
+        className={`px-4 py-2 text-sm ${className || ''}`} 
+        {...props}
+      >
+        {children}
+      </td>
+    ),
+    // Handle images
+    img: ({ node, className, ...props }) => (
+      <img 
+        className={`max-w-full h-auto my-4 rounded ${className || ''}`} 
+        {...props} 
+      />
+    ),
+    // Handle horizontal rules
+    hr: ({ node, className, ...props }) => (
+      <hr 
+        className={`my-4 border-t border-border ${className || ''}`} 
+        {...props} 
+      />
     ),
   };
   
@@ -221,10 +323,11 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="rounded-lg bg-muted p-4">
+          <div className="rounded-lg bg-muted p-5">
             <div className="markdown-content">
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]} 
+                rehypePlugins={[rehypeRaw, rehypeSanitize]}
                 components={MarkdownComponents}
               >
                 {results.recommendations.summary}
@@ -232,7 +335,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
             </div>
           </div>
           
-          <div className="space-y-4">
+          <div className="space-y-6">
             {results.recommendations.recommendations.map((recommendation, index) => {
               const priority = getRecommendationPriority(recommendation);
               const codeExample = extractCodeExample(recommendation);
@@ -244,7 +347,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                   priority === 'medium' ? 'border-l-primary' : 
                   'border-l-muted-foreground'
                 }`}>
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Zap className={`h-5 w-5 ${
@@ -265,10 +368,11 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4 pt-2">
+                  <CardContent className="space-y-5 pt-0">
                     <div className="markdown-content">
                       <ReactMarkdown 
                         remarkPlugins={[remarkGfm]} 
+                        rehypePlugins={[rehypeRaw, rehypeSanitize]}
                         components={MarkdownComponents}
                       >
                         {cleanText}

@@ -122,6 +122,17 @@
 }
 
 /* Markdown content styling */
+.markdown-content > * {
+  all: revert;
+  color: inherit;
+  font-family: inherit;
+}
+
+.markdown-content {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .markdown-content ul {
   list-style-type: disc;
   margin-left: 1.5rem;
@@ -151,12 +162,24 @@
   margin-bottom: 0.5rem;
 }
 
+.markdown-content h1 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.125rem;
+}
+
+.markdown-content h3 {
+  font-size: 1rem;
+}
+
 .markdown-content code {
   background-color: var(--muted);
   padding: 0.125rem 0.25rem;
   border-radius: 0.25rem;
   font-family: var(--font-mono);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .markdown-content a {
@@ -169,4 +192,38 @@
   padding-left: 1rem;
   margin: 1rem 0;
   font-style: italic;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.markdown-content th {
+  background-color: var(--muted);
+  font-weight: 600;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.markdown-content td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.markdown-content tr:nth-child(even) {
+  background-color: var(--muted);
+}
+
+.markdown-content hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.markdown-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.25rem;
 }
