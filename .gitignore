@@ -40,6 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# documentation
+# Development Summary & Context
 PerfPilot AI - Development Summary & Context.md
-Next.js Hackathon Project Planning_.md
