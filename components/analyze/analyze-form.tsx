@@ -8,8 +8,17 @@ import { CodeInput } from "./code-input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from 'lucide-react';
 import { toast } from "sonner";
-import { AnalysisResults } from "./analysis-results";
 import { AnalysisResult } from "@/lib/analysis/analyzer";
+import dynamic from "next/dynamic";
+
+// Dynamically import the AnalysisResults component
+const AnalysisResults = dynamic(() => import("./analysis-results").then(mod => ({ default: mod.AnalysisResults })), {
+  loading: () => <div className="flex items-center justify-center py-8">
+    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
+    <p>Loading analysis results...</p>
+  </div>,
+  ssr: false
+});
 
 export function AnalyzeForm() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);

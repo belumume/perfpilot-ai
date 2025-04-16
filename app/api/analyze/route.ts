@@ -3,6 +3,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { analyzeCode, AnalysisResult } from "@/lib/analysis/analyzer";
 import { generateRecommendations } from "@/lib/ai/generate-recommendations";
 
+// Enable edge runtime for better performance
+export const runtime = 'edge';
+
+// Set long revalidation time for API responses
+export const revalidate = 3600; // 1 hour
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -109,6 +115,10 @@ export async function POST(request: NextRequest) {
           aggregateSummary: aggregateSummary
         },
         recommendations: aiRecommendations
+      }, {
+        headers: {
+          'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+        }
       });
     } else if (codeSource === "input") {
       // Existing single code handling
@@ -132,6 +142,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         analysis: analysisResult,
         recommendations: aiRecommendations
+      }, {
+        headers: {
+          'Cache-Control': 'public, max-age=3600, s-maxage=3600, stale-while-revalidate=86400',
+        }
       });
     } else {
       return NextResponse.json(

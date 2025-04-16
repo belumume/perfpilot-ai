@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "sonner"; // Import directly from sonner package
+import { Suspense } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +27,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+            {children}
+          </Suspense>
           <Toaster />
         </ThemeProvider>
       </body>
