@@ -144,7 +144,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
       <li {...props} className="mb-1" />
     ),
     // Style code (inline)
-    code: ({ inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
+    code: ({ inline, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
       return inline ? (
         <code {...props} className="px-1 py-0.5 bg-muted rounded text-xs font-mono">
           {children}
