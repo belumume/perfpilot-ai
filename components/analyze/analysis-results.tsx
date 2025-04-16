@@ -110,7 +110,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   // Function to format markdown with custom components
   const MarkdownComponents: Components = {
     // Style links
-    a: ({ node, ...props }) => (
+    a: (props) => (
       <a 
         {...props} 
         className="text-primary hover:underline" 
@@ -119,33 +119,32 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
       />
     ),
     // Style paragraphs
-    p: ({ node, ...props }) => (
+    p: (props) => (
       <p {...props} className="text-sm mb-2" />
     ),
     // Style headings
-    h1: ({ node, ...props }) => (
+    h1: (props) => (
       <h1 {...props} className="text-xl font-bold mb-2" />
     ),
-    h2: ({ node, ...props }) => (
+    h2: (props) => (
       <h2 {...props} className="text-lg font-bold mb-2" />
     ),
-    h3: ({ node, ...props }) => (
+    h3: (props) => (
       <h3 {...props} className="text-base font-bold mb-2" />
     ),
     // Style lists
-    ul: ({ node, ...props }) => (
+    ul: (props) => (
       <ul {...props} className="text-sm list-disc pl-5 mb-2" />
     ),
-    ol: ({ node, ...props }) => (
+    ol: (props) => (
       <ol {...props} className="text-sm list-decimal pl-5 mb-2" />
     ),
     // Style list items
-    li: ({ node, ...props }) => (
+    li: (props) => (
       <li {...props} className="mb-1" />
     ),
     // Style code (inline)
-    code: ({ node, inline, className, children, ...props }: any) => {
-      const match = /language-(\w+)/.exec(className || '');
+    code: ({ inline, className, children, ...props }: React.ComponentPropsWithoutRef<'code'> & { inline?: boolean }) => {
       return inline ? (
         <code {...props} className="px-1 py-0.5 bg-muted rounded text-xs font-mono">
           {children}
@@ -155,7 +154,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
       );
     },
     // Style blockquotes
-    blockquote: ({ node, ...props }) => (
+    blockquote: (props) => (
       <blockquote {...props} className="pl-4 border-l-2 border-muted italic my-2" />
     ),
   };
