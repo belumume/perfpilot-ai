@@ -11,6 +11,9 @@ import { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Badge } from "@/components/ui/badge";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { Components } from 'react-markdown';
 
 // Add type declaration for modules without declaration files
 declare module 'react-syntax-highlighter';
@@ -89,7 +92,8 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
 
   // Function to extract code examples from recommendation text
   const extractCodeExample = (recommendation: string) => {
-    const codeBlockRegex = /```(?:jsx?|tsx?)?([^`]+)```/;
+    // Match code blocks with or without language specification
+    const codeBlockRegex = /```(?:jsx?|tsx?|javascript|typescript)?([^`]+)```/;
     const match = recommendation.match(codeBlockRegex);
     if (match && match[1]) {
       return match[1].trim();
@@ -99,7 +103,61 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
 
   // Function to clean recommendation text by removing code blocks
   const cleanRecommendationText = (recommendation: string) => {
-    return recommendation.replace(/```(?:jsx?|tsx?)?([^`]+)```/g, '').trim();
+    // Remove code blocks with or without language specification
+    return recommendation.replace(/```(?:jsx?|tsx?|javascript|typescript)?([^`]+)```/g, '').trim();
+  };
+
+  // Function to format markdown with custom components
+  const MarkdownComponents: Components = {
+    // Style links
+    a: ({ node, ...props }) => (
+      <a 
+        {...props} 
+        className="text-primary hover:underline" 
+        target="_blank" 
+        rel="noopener noreferrer"
+      />
+    ),
+    // Style paragraphs
+    p: ({ node, ...props }) => (
+      <p {...props} className="text-sm mb-2" />
+    ),
+    // Style headings
+    h1: ({ node, ...props }) => (
+      <h1 {...props} className="text-xl font-bold mb-2" />
+    ),
+    h2: ({ node, ...props }) => (
+      <h2 {...props} className="text-lg font-bold mb-2" />
+    ),
+    h3: ({ node, ...props }) => (
+      <h3 {...props} className="text-base font-bold mb-2" />
+    ),
+    // Style lists
+    ul: ({ node, ...props }) => (
+      <ul {...props} className="text-sm list-disc pl-5 mb-2" />
+    ),
+    ol: ({ node, ...props }) => (
+      <ol {...props} className="text-sm list-decimal pl-5 mb-2" />
+    ),
+    // Style list items
+    li: ({ node, ...props }) => (
+      <li {...props} className="mb-1" />
+    ),
+    // Style code (inline)
+    code: ({ node, inline, className, children, ...props }: any) => {
+      const match = /language-(\w+)/.exec(className || '');
+      return inline ? (
+        <code {...props} className="px-1 py-0.5 bg-muted rounded text-xs font-mono">
+          {children}
+        </code>
+      ) : (
+        <code {...props} />
+      );
+    },
+    // Style blockquotes
+    blockquote: ({ node, ...props }) => (
+      <blockquote {...props} className="pl-4 border-l-2 border-muted italic my-2" />
+    ),
   };
   
   return (
@@ -165,7 +223,14 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="rounded-lg bg-muted p-4">
-            <p className="text-sm">{results.recommendations.summary}</p>
+            <div className="markdown-content">
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]} 
+                components={MarkdownComponents}
+              >
+                {results.recommendations.summary}
+              </ReactMarkdown>
+            </div>
           </div>
           
           <div className="space-y-4">
@@ -175,11 +240,19 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
               const cleanText = cleanRecommendationText(recommendation);
               
               return (
-                <Card key={index} className="border-l-4 border-l-primary">
+                <Card key={index} className={`border-l-4 ${
+                  priority === 'high' ? 'border-l-destructive' : 
+                  priority === 'medium' ? 'border-l-primary' : 
+                  'border-l-muted-foreground'
+                }`}>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Zap className="h-5 w-5 text-primary" />
+                        <Zap className={`h-5 w-5 ${
+                          priority === 'high' ? 'text-destructive' : 
+                          priority === 'medium' ? 'text-primary' : 
+                          'text-muted-foreground'
+                        }`} />
                         <CardTitle className="text-base">Recommendation {index + 1}</CardTitle>
                       </div>
                       <Badge variant={
@@ -193,11 +266,18 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm">{cleanText}</p>
+                  <CardContent className="space-y-4 pt-2">
+                    <div className="markdown-content">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]} 
+                        components={MarkdownComponents}
+                      >
+                        {cleanText}
+                      </ReactMarkdown>
+                    </div>
                     
                     {codeExample && (
-                      <div className="rounded-md overflow-hidden">
+                      <div className="rounded-md overflow-hidden mt-4">
                         <div className="bg-muted px-4 py-2 text-xs font-medium flex items-center">
                           <FileCode className="h-4 w-4 mr-2" />
                           Example Implementation

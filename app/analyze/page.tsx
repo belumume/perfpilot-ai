@@ -6,7 +6,7 @@ import { AnalyzeForm } from "@/components/analyze/analyze-form";
 export default function AnalyzePage() {
   return (
     <MainLayout>
-      <div className="container py-10">
+      <div className="py-10">
         <AnalyzeHeader />
         <AnalyzeForm />
       </div>

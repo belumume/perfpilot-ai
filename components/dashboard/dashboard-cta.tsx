@@ -7,7 +7,7 @@ import { FileCode2, ArrowRight, BarChart2 } from 'lucide-react';
 export function DashboardCTA() {
   return (
     <section className="w-full py-12 md:py-24">
-      <div className="container px-4 md:px-6">
+      <div className="container">
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Quick Analysis Card */}
           <Card className="overflow-hidden">
