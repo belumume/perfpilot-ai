@@ -7,8 +7,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { getAnalysisHistory, deleteAnalysisRecord, clearAnalysisHistory, AnalysisHistoryRecord } from "@/lib/storage";
 import { format } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, TooltipProps } from "recharts";
-import { BarChart, Bar, Cell, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar } from "recharts";
 import { 
   ArchiveX, 
   ArrowRight, 
@@ -17,7 +17,6 @@ import {
   FileText, 
   LineChart as LineChartIcon,
   ListChecks, 
-  Package, 
   RefreshCw, 
   Trash2, 
   TrendingUp,
