@@ -23,18 +23,79 @@ function isPackageJsonFile(fileName: string, content: string): boolean {
   
   // If not identified by name, check content
   try {
-    const parsed = JSON.parse(content);
-    if (parsed && (parsed.dependencies || parsed.devDependencies)) {
+    // Skip full parsing here - just do a quick check for key properties
+    if (content.includes('"dependencies"') || 
+        content.includes('"devDependencies"') || 
+        content.includes('"peerDependencies"')) {
       console.log(`File ${fileName} identified as package.json by content (has dependencies)`);
       return true;
     }
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_) {
-    // If we can't parse the JSON, it's not a valid package.json
+    // If we can't check the content, it's probably not a valid package.json
     console.log(`File ${fileName} doesn't appear to be valid JSON`);
   }
   
   return false;
+}
+
+/**
+ * Process multiple package.json files, trying each one until we get a successful analysis
+ */
+async function processBundleAnalysis(packageJsonFiles: string[], fileContents: Record<string, string>) {
+  console.log(`Attempting to analyze ${packageJsonFiles.length} package.json files`);
+  let bundleAnalysis = null;
+  const errorMessages = [];
+  
+  // Try each package.json file in order until we get a successful analysis
+  for (const packageJsonFile of packageJsonFiles) {
+    try {
+      const packageJsonContent = fileContents[packageJsonFile];
+      console.log(`Trying package.json file: ${packageJsonFile}`);
+      
+      bundleAnalysis = await analyzeBundleSize(packageJsonContent);
+      console.log('Bundle analysis completed:', 
+        `Found ${bundleAnalysis.heavyDependencies.length} heavy deps, ` +
+        `${bundleAnalysis.unnecessaryDependencies.length} unnecessary deps, ` +
+        `${bundleAnalysis.duplicateDependencies.length} duplicate deps`
+      );
+      
+      // If we get here without errors, we have a successful analysis
+      break;
+    } catch (error) {
+      console.error(`Error analyzing ${packageJsonFile}:`, error);
+      // Fix the TypeScript error by ensuring error is an Error object with a message property
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Unknown error occurred';
+      errorMessages.push(`Failed to analyze ${packageJsonFile}: ${errorMessage}`);
+    }
+  }
+  
+  // If we couldn't analyze any package.json files, return a default result with error info
+  if (!bundleAnalysis) {
+    console.error('All package.json analyses failed:', errorMessages);
+    bundleAnalysis = {
+      totalDependencies: 0,
+      heavyDependencies: [],
+      unnecessaryDependencies: [],
+      duplicateDependencies: [],
+      treeshakingIssues: [],
+      score: 100,
+      summary: {
+        totalIssues: 0,
+        size: {
+          estimated: `Error parsing package.json: ${errorMessages.join('; ')}`,
+          breakdown: {
+            dependencies: 'Unknown',
+            devDependencies: 'Unknown',
+          },
+        },
+      },
+    };
+  }
+  
+  return bundleAnalysis;
 }
 
 export async function POST(request: NextRequest) {
@@ -108,11 +169,9 @@ export async function POST(request: NextRequest) {
       
       let bundleAnalysis = null;
       
-      // Process each file
+      // Process each file for code analysis
       for (const [fileName, content] of Object.entries(fileContents)) {
-        console.log(`Processing file: ${fileName}, content length: ${content.length}`);
-        
-        // Skip bundle analysis files for now
+        // Skip package.json files for code analysis
         if (!packageJsonFiles.includes(fileName)) {
           const result = await analyzeCode(content);
           
@@ -135,51 +194,17 @@ export async function POST(request: NextRequest) {
       
       // Perform bundle analysis if package.json files exist
       if (packageJsonFiles.length > 0) {
-        // Use the first package.json file for analysis
-        const packageJsonFile = packageJsonFiles[0];
-        const packageJsonContent = fileContents[packageJsonFile];
-        console.log('Using package.json file for bundle analysis:', packageJsonFile);
-        console.log('Package.json content:', packageJsonContent.substring(0, 100) + '...');
+        // Use our new function to try analyzing each package.json file
+        bundleAnalysis = await processBundleAnalysis(packageJsonFiles, fileContents);
         
-        try {
-          // Test if we can parse the JSON
-          JSON.parse(packageJsonContent);
-          console.log('Successfully parsed package.json JSON');
-          
-          bundleAnalysis = await analyzeBundleSize(packageJsonContent);
-          console.log('Bundle analysis completed:', 
-            `Found ${bundleAnalysis.heavyDependencies.length} heavy deps, ` +
-            `${bundleAnalysis.unnecessaryDependencies.length} unnecessary deps, ` +
-            `${bundleAnalysis.duplicateDependencies.length} duplicate deps`
-          );
-          
-          // Analyze code files for treeshaking issues
+        // Analyze code files for treeshaking issues if we have a successful bundle analysis
+        if (bundleAnalysis) {
           const treeshakingIssues = analyzeTreeshaking(fileContents);
           bundleAnalysis.treeshakingIssues = treeshakingIssues;
           console.log('Treeshaking analysis completed:', `Found ${treeshakingIssues.length} issues`);
           
           // Update total issues count
           bundleAnalysis.summary.totalIssues += treeshakingIssues.length;
-        } catch (error) {
-          console.error('Error analyzing package.json:', error);
-          bundleAnalysis = {
-            totalDependencies: 0,
-            heavyDependencies: [],
-            unnecessaryDependencies: [],
-            duplicateDependencies: [],
-            treeshakingIssues: [],
-            score: 100,
-            summary: {
-              totalIssues: 0,
-              size: {
-                estimated: 'Error parsing package.json',
-                breakdown: {
-                  dependencies: 'Unknown',
-                  devDependencies: 'Unknown',
-                },
-              },
-            },
-          };
         }
       }
       
@@ -287,13 +312,9 @@ Please provide additional recommendations specifically for optimizing the bundle
       
       if (isPkgJson) {
         console.log('Analyzing pasted package.json, content length:', code.length);
-        console.log('First 100 chars:', code.substring(0, 100) + '...');
         
         try {
-          // Test if we can parse the JSON
-          JSON.parse(code);
-          console.log('Successfully parsed pasted package.json JSON');
-          
+          // Use the new bundle analysis approach for single file input as well
           bundleAnalysis = await analyzeBundleSize(code);
           console.log('Bundle analysis completed for pasted package.json:', 
             `Found ${bundleAnalysis.heavyDependencies.length} heavy deps, ` +
@@ -302,6 +323,10 @@ Please provide additional recommendations specifically for optimizing the bundle
           );
         } catch (error) {
           console.error('Error analyzing pasted package.json:', error);
+          // Fix TypeScript error by properly handling unknown error type
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'Unknown error occurred';
           bundleAnalysis = {
             totalDependencies: 0,
             heavyDependencies: [],
@@ -312,7 +337,7 @@ Please provide additional recommendations specifically for optimizing the bundle
             summary: {
               totalIssues: 0,
               size: {
-                estimated: 'Error parsing package.json',
+                estimated: `Error parsing package.json: ${errorMessage}`,
                 breakdown: {
                   dependencies: 'Unknown',
                   devDependencies: 'Unknown',
@@ -384,8 +409,12 @@ Please provide recommendations for optimizing the bundle size based on this anal
     }
   } catch (error) {
     console.error("Analysis error:", error);
+    // Fix TypeScript error by properly handling unknown error type
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Unknown error occurred';
     return NextResponse.json(
-      { error: "An error occurred during analysis" },
+      { error: `An error occurred during analysis: ${errorMessage}` },
       { status: 500 }
     );
   }

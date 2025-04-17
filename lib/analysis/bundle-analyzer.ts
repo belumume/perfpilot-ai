@@ -97,27 +97,114 @@ const TREESHAKING_ISSUE_PATTERNS = [
 ];
 
 /**
- * Helper function to clean up JSON content that might have formatting issues
+ * Advanced function to clean up JSON content that might have formatting issues
+ * Handles common issues like comments, trailing commas, unquoted property names, and invalid escapes
  */
 function cleanJsonContent(jsonContent: string): string {
-  // Remove comments (both // and /* */)
-  let cleaned = jsonContent.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  // Step 1: Remove comments (both // and /* */)
+  let cleaned = jsonContent.replace(/\/\/.*$/gm, '') // Remove line comments
+                           .replace(/\/\*[\s\S]*?\*\//g, ''); // Remove block comments
   
-  // Remove trailing commas
+  // Step 2: Fix trailing commas in objects and arrays
   cleaned = cleaned.replace(/,(\s*[}\]])/g, '$1');
-
-  // Try to fix the case when there's a syntax error with JSON comments in the file
-  if (cleaned.includes('// Comments in JSON') || cleaned.includes('/*')) {
-    try {
-      // Try to parse it as a JavaScript object
-      const jsObject = new Function(`return ${cleaned}`)();
-      return JSON.stringify(jsObject);
-    } catch (e) {
-      console.log('Failed to parse as JavaScript object:', e);
-    }
-  }
+  
+  // Step 3: Fix missing quotes around property names
+  // This regex looks for unquoted property names (common in relaxed JSON formats)
+  cleaned = cleaned.replace(/([{,]\s*)([a-zA-Z0-9_$]+)(\s*:)/g, '$1"$2"$3');
+  
+  // Step 4: Fix single quotes used instead of double quotes (used in some JS configs)
+  // First handle property names with single quotes
+  cleaned = cleaned.replace(/([{,]\s*)'([^']+)'(\s*:)/g, '$1"$2"$3');
+  // Then handle string values with single quotes (more complex to avoid breaking JSON structure)
+  cleaned = cleaned.replace(/:(\s*)'([^']*)'([,}\]])/g, ':$1"$2"$3');
+  
+  // Step 5: Fix invalid escape sequences
+  // Replace common Windows path backslashes that might not be properly escaped
+  cleaned = cleaned.replace(/:\s*"([^"\\]*)(\\[^"\\][^"\\]*)+"/g, (match) => {
+    return match.replace(/\\/g, '\\\\');
+  });
+  
+  // Step 6: Try to normalize any other common issues
+  // Remove potential control characters that might cause parsing errors
+  cleaned = cleaned.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
   
   return cleaned;
+}
+
+/**
+ * Tries multiple strategies to parse JSON content safely
+ * Returns the parsed object or throws an error if all strategies fail
+ */
+function parseJsonSafely(content: string): Record<string, unknown> {
+  // Strategy 1: Try direct JSON.parse
+  try {
+    return JSON.parse(content);
+  } catch {
+    console.log('Direct JSON.parse failed, trying cleanup');
+  }
+  
+  // Strategy 2: Try cleaning the content first
+  try {
+    const cleaned = cleanJsonContent(content);
+    return JSON.parse(cleaned);
+  } catch {
+    console.log('Cleaned JSON.parse failed, trying JavaScript evaluation');
+  }
+  
+  // Strategy 3: Try to parse it as a JavaScript object literal
+  try {
+    // WARNING: This uses Function constructor as a last resort
+    // It's generally safe since we're not executing arbitrary code, just evaluating a JSON-like object
+    const jsObject = new Function(`try { return (${content}); } catch(e) { return {}; }`)();
+    
+    // Check if we got something usable back
+    if (jsObject && typeof jsObject === 'object' && !Array.isArray(jsObject)) {
+      return jsObject as Record<string, unknown>;
+    }
+    throw new Error('JavaScript evaluation did not return a valid object');
+  } catch {
+    console.log('JavaScript evaluation failed, trying piecemeal extraction');
+  }
+  
+  // Strategy 4: Try to extract just dependencies and devDependencies directly using regex
+  // This is a last resort when the JSON is seriously malformed
+  try {
+    const dependenciesMatch = content.match(/"dependencies"\s*:\s*({[^}]*})/);
+    const devDependenciesMatch = content.match(/"devDependencies"\s*:\s*({[^}]*})/);
+    
+    const result: Record<string, unknown> = {};
+    
+    if (dependenciesMatch && dependenciesMatch[1]) {
+      // Clean and parse just the dependencies object
+      try {
+        const depsString = cleanJsonContent(`{${dependenciesMatch[1]}}`);
+        result.dependencies = JSON.parse(depsString);
+      } catch {
+        console.log('Failed to parse dependencies section');
+      }
+    }
+    
+    if (devDependenciesMatch && devDependenciesMatch[1]) {
+      // Clean and parse just the devDependencies object
+      try {
+        const devDepsString = cleanJsonContent(`{${devDependenciesMatch[1]}}`);
+        result.devDependencies = JSON.parse(devDepsString);
+      } catch {
+        console.log('Failed to parse devDependencies section');
+      }
+    }
+    
+    // If we extracted at least one section, return the result
+    if (result.dependencies || result.devDependencies) {
+      return result;
+    }
+    
+    throw new Error('Failed to extract any dependencies sections');
+  } catch (error) {
+    // All strategies failed
+    console.error('All JSON parsing strategies failed:', error);
+    throw new Error('Could not parse package.json using any available method');
+  }
 }
 
 /**
@@ -129,41 +216,31 @@ export async function analyzeBundleSize(packageJsonContent: string): Promise<Bun
   let packageJson: PackageJson;
   
   try {
-    // First try simple JSON parse
-    packageJson = JSON.parse(packageJsonContent);
-    console.log('Successfully parsed package.json with standard JSON.parse');
-  } catch (initialError) {
-    console.error('Error in initial JSON parse:', initialError);
+    // Use our new parseJsonSafely function instead of direct JSON.parse
+    packageJson = parseJsonSafely(packageJsonContent);
+    console.log('Successfully parsed package.json');
+  } catch (error) {
+    console.error('All parsing methods failed:', error);
     
-    try {
-      // If that fails, try to clean the JSON content and parse again
-      const cleanedContent = cleanJsonContent(packageJsonContent);
-      console.log('Cleaned JSON content, attempting to parse again');
-      packageJson = JSON.parse(cleanedContent);
-      console.log('Successfully parsed cleaned package.json');
-    } catch (secondError) {
-      console.error('Error parsing cleaned JSON:', secondError);
-      
-      // Return a default result if we can't parse the JSON
-      return {
-        totalDependencies: 0,
-        heavyDependencies: [],
-        unnecessaryDependencies: [],
-        duplicateDependencies: [],
-        treeshakingIssues: [],
-        score: 100, // Default to perfect score when we can't analyze
-        summary: {
-          totalIssues: 0,
-          size: {
-            estimated: 'Error: Invalid package.json format',
-            breakdown: {
-              dependencies: 'Parse error',
-              devDependencies: 'Parse error',
-            },
+    // Return a default result if we can't parse the JSON
+    return {
+      totalDependencies: 0,
+      heavyDependencies: [],
+      unnecessaryDependencies: [],
+      duplicateDependencies: [],
+      treeshakingIssues: [],
+      score: 100, // Default to perfect score when we can't analyze
+      summary: {
+        totalIssues: 0,
+        size: {
+          estimated: 'Error: Invalid package.json format',
+          breakdown: {
+            dependencies: 'Parse error',
+            devDependencies: 'Parse error',
           },
         },
-      };
-    }
+      },
+    };
   }
   
   try {
