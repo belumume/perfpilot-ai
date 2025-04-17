@@ -43,3 +43,6 @@ next-env.d.ts
 # documentation
 Next.js Hackathon Project Planning_.md
 PerfPilot AI - Development Summary & Context.md
+
+# cursor ignore
+.cursorignore
