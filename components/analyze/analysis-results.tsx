@@ -3,10 +3,27 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AnalysisResult } from "@/lib/analysis/analyzer";
-import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode, ExternalLink, BarChart, BookOpen, Copy, LineChart, Download, Share2 } from 'lucide-react';
+import { 
+  AlertTriangle, 
+  CheckCircle, 
+  Info, 
+  ArrowLeft, 
+  Zap, 
+  FileCode, 
+  ExternalLink, 
+  BarChart, 
+  BookOpen, 
+  Copy, 
+  LineChart, 
+  Download, 
+  Share2, 
+  Bookmark, 
+  LayoutDashboard 
+} from 'lucide-react';
 import { useState, useEffect } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -22,6 +39,8 @@ import PerformanceCharts from "@/components/charts/PerformanceCharts";
 import Image from "next/image";
 import { BundleAnalysisResult } from "@/lib/analysis/bundle-analyzer";
 import { BundleAnalysis } from "@/components/analyze/bundle-analysis";
+import { saveAnalysisToHistory } from "@/lib/storage";
+import Link from "next/link";
 
 // Add type declaration for modules without declaration files
 declare module 'react-syntax-highlighter';
@@ -52,6 +71,8 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   // State for active file and tab - these must be defined outside conditionals
   const [activeFile, setActiveFile] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [projectName, setProjectName] = useState("Unnamed Project");
+  const [isSaved, setIsSaved] = useState(false);
   
   // All hooks must be called at the top level, before any conditional returns
   useEffect(() => {
@@ -322,6 +343,24 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
     ),
   };
   
+  // Function to save analysis to history
+  const handleSaveToHistory = () => {
+    try {
+      // Calculate performance score
+      const performanceScore = results.analysis ? calculatePerformanceScore() : 0;
+      
+      // Save analysis to history
+      saveAnalysisToHistory(results, performanceScore, projectName);
+      
+      // Show success toast and update UI state
+      toast.success("Analysis saved to dashboard");
+      setIsSaved(true);
+    } catch (error) {
+      console.error("Failed to save analysis:", error);
+      toast.error("Failed to save analysis to dashboard");
+    }
+  };
+  
   // Handle bundle-only analysis (when only bundleAnalysis is available without code analysis)
   if (results.bundleAnalysis && !results.analysis) {
     return (
@@ -333,6 +372,37 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
           </Button>
           
           <div className="flex gap-2">
+            {!isSaved ? (
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Input
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="Project name"
+                    className="w-40 h-9"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSaveToHistory}
+                >
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  Save to Dashboard
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                asChild
+              >
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  View in Dashboard
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={exportAsJson}>
               <Download className="mr-2 h-4 w-4" />
               Export JSON
@@ -394,6 +464,37 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
           </Button>
           
           <div className="flex gap-2">
+            {!isSaved ? (
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Input
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    placeholder="Project name"
+                    className="w-40 h-9"
+                  />
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSaveToHistory}
+                >
+                  <Bookmark className="mr-2 h-4 w-4" />
+                  Save to Dashboard
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm"
+                asChild
+              >
+                <Link href="/dashboard">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  View in Dashboard
+                </Link>
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={exportAsJson}>
               <Download className="mr-2 h-4 w-4" />
               Export JSON
@@ -555,6 +656,37 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         </Button>
         
         <div className="flex gap-2">
+          {!isSaved ? (
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Input
+                  value={projectName}
+                  onChange={(e) => setProjectName(e.target.value)}
+                  placeholder="Project name"
+                  className="w-40 h-9"
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSaveToHistory}
+              >
+                <Bookmark className="mr-2 h-4 w-4" />
+                Save to Dashboard
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              size="sm"
+              asChild
+            >
+              <Link href="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                View in Dashboard
+              </Link>
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={exportAsJson}>
             <Download className="mr-2 h-4 w-4" />
             Export JSON
