@@ -45,7 +45,7 @@ function isPackageJsonFile(fileName: string, content: string): boolean {
 async function processBundleAnalysis(packageJsonFiles: string[], fileContents: Record<string, string>) {
   console.log(`Attempting to analyze ${packageJsonFiles.length} package.json files`);
   let bundleAnalysis = null;
-  let errorMessages = [];
+  const errorMessages = [];
   
   // Try each package.json file in order until we get a successful analysis
   for (const packageJsonFile of packageJsonFiles) {
@@ -64,7 +64,11 @@ async function processBundleAnalysis(packageJsonFiles: string[], fileContents: R
       break;
     } catch (error) {
       console.error(`Error analyzing ${packageJsonFile}:`, error);
-      errorMessages.push(`Failed to analyze ${packageJsonFile}: ${error.message}`);
+      // Fix the TypeScript error by ensuring error is an Error object with a message property
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Unknown error occurred';
+      errorMessages.push(`Failed to analyze ${packageJsonFile}: ${errorMessage}`);
     }
   }
   
@@ -319,6 +323,10 @@ Please provide additional recommendations specifically for optimizing the bundle
           );
         } catch (error) {
           console.error('Error analyzing pasted package.json:', error);
+          // Fix TypeScript error by properly handling unknown error type
+          const errorMessage = error instanceof Error 
+            ? error.message 
+            : 'Unknown error occurred';
           bundleAnalysis = {
             totalDependencies: 0,
             heavyDependencies: [],
@@ -329,7 +337,7 @@ Please provide additional recommendations specifically for optimizing the bundle
             summary: {
               totalIssues: 0,
               size: {
-                estimated: `Error parsing package.json: ${error.message}`,
+                estimated: `Error parsing package.json: ${errorMessage}`,
                 breakdown: {
                   dependencies: 'Unknown',
                   devDependencies: 'Unknown',
@@ -401,8 +409,12 @@ Please provide recommendations for optimizing the bundle size based on this anal
     }
   } catch (error) {
     console.error("Analysis error:", error);
+    // Fix TypeScript error by properly handling unknown error type
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Unknown error occurred';
     return NextResponse.json(
-      { error: `An error occurred during analysis: ${error.message}` },
+      { error: `An error occurred during analysis: ${errorMessage}` },
       { status: 500 }
     );
   }

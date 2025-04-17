@@ -135,11 +135,11 @@ function cleanJsonContent(jsonContent: string): string {
  * Tries multiple strategies to parse JSON content safely
  * Returns the parsed object or throws an error if all strategies fail
  */
-function parseJsonSafely(content: string): Record<string, any> {
+function parseJsonSafely(content: string): Record<string, unknown> {
   // Strategy 1: Try direct JSON.parse
   try {
     return JSON.parse(content);
-  } catch (e) {
+  } catch {
     console.log('Direct JSON.parse failed, trying cleanup');
   }
   
@@ -147,7 +147,7 @@ function parseJsonSafely(content: string): Record<string, any> {
   try {
     const cleaned = cleanJsonContent(content);
     return JSON.parse(cleaned);
-  } catch (e) {
+  } catch {
     console.log('Cleaned JSON.parse failed, trying JavaScript evaluation');
   }
   
@@ -159,10 +159,10 @@ function parseJsonSafely(content: string): Record<string, any> {
     
     // Check if we got something usable back
     if (jsObject && typeof jsObject === 'object' && !Array.isArray(jsObject)) {
-      return jsObject;
+      return jsObject as Record<string, unknown>;
     }
     throw new Error('JavaScript evaluation did not return a valid object');
-  } catch (e) {
+  } catch {
     console.log('JavaScript evaluation failed, trying piecemeal extraction');
   }
   
@@ -172,14 +172,14 @@ function parseJsonSafely(content: string): Record<string, any> {
     const dependenciesMatch = content.match(/"dependencies"\s*:\s*({[^}]*})/);
     const devDependenciesMatch = content.match(/"devDependencies"\s*:\s*({[^}]*})/);
     
-    const result: Record<string, any> = {};
+    const result: Record<string, unknown> = {};
     
     if (dependenciesMatch && dependenciesMatch[1]) {
       // Clean and parse just the dependencies object
       try {
         const depsString = cleanJsonContent(`{${dependenciesMatch[1]}}`);
         result.dependencies = JSON.parse(depsString);
-      } catch (e) {
+      } catch {
         console.log('Failed to parse dependencies section');
       }
     }
@@ -189,7 +189,7 @@ function parseJsonSafely(content: string): Record<string, any> {
       try {
         const devDepsString = cleanJsonContent(`{${devDependenciesMatch[1]}}`);
         result.devDependencies = JSON.parse(devDepsString);
-      } catch (e) {
+      } catch {
         console.log('Failed to parse devDependencies section');
       }
     }
@@ -200,9 +200,9 @@ function parseJsonSafely(content: string): Record<string, any> {
     }
     
     throw new Error('Failed to extract any dependencies sections');
-  } catch (e) {
+  } catch (error) {
     // All strategies failed
-    console.error('All JSON parsing strategies failed:', e);
+    console.error('All JSON parsing strategies failed:', error);
     throw new Error('Could not parse package.json using any available method');
   }
 }

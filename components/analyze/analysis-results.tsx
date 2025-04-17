@@ -113,7 +113,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
       reportContent += `- **Info Issues**: ${summary.infoIssues}\n\n`;
     }
     
-    if (hasBundleAnalysis) {
+    if (hasBundleAnalysis && results.bundleAnalysis) {
       reportContent += `## Bundle Analysis\n\n`;
       reportContent += `- **Bundle Score**: ${results.bundleAnalysis.score}/100\n`;
       reportContent += `- **Total Dependencies**: ${results.bundleAnalysis.totalDependencies}\n`;
