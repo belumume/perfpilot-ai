@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AnalysisResult } from "@/lib/analysis/analyzer";
-import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode, ExternalLink, BarChart, BookOpen, Copy, LineChart } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode, ExternalLink, BarChart, BookOpen, Copy, LineChart, Download, Share2 } from 'lucide-react';
 import { useState, useEffect } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -71,6 +71,106 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
       }
     }
   }, [results.analysis, activeFile]);
+  
+  // Function to export analysis results as JSON
+  const exportAsJson = () => {
+    const dataStr = JSON.stringify(results, null, 2);
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    
+    const exportFileName = 'perfpilot-analysis.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileName);
+    linkElement.click();
+    
+    toast.success("Analysis results exported as JSON");
+  };
+  
+  // Function to export as formatted report
+  const exportAsReport = () => {
+    // Check if we have multi-file results or bundle analysis
+    const isMultiFile = results.analysis && 'fileResults' in results.analysis;
+    const hasBundleAnalysis = !!results.bundleAnalysis;
+    
+    // Get the summary data
+    const summary = isMultiFile && results.analysis && 'aggregateSummary' in results.analysis 
+      ? results.analysis.aggregateSummary 
+      : (results.analysis as AnalysisResult)?.summary;
+    
+    // Calculate performance score if we have analysis results
+    const performanceScore = results.analysis ? calculatePerformanceScore() : 'N/A';
+    
+    // Create report content
+    let reportContent = `# PerfPilot AI Analysis Report\n\n`;
+    reportContent += `## Summary\n\n`;
+    
+    if (results.analysis) {
+      reportContent += `- **Performance Score**: ${performanceScore}/100\n`;
+      reportContent += `- **Total Issues**: ${summary.totalIssues}\n`;
+      reportContent += `- **Critical Issues**: ${summary.criticalIssues}\n`;
+      reportContent += `- **Warning Issues**: ${summary.warningIssues}\n`;
+      reportContent += `- **Info Issues**: ${summary.infoIssues}\n\n`;
+    }
+    
+    if (hasBundleAnalysis) {
+      reportContent += `## Bundle Analysis\n\n`;
+      reportContent += `- **Bundle Score**: ${results.bundleAnalysis.score}/100\n`;
+      reportContent += `- **Total Dependencies**: ${results.bundleAnalysis.totalDependencies}\n`;
+      reportContent += `- **Heavy Dependencies**: ${results.bundleAnalysis.heavyDependencies.length}\n`;
+      reportContent += `- **Unnecessary Dependencies**: ${results.bundleAnalysis.unnecessaryDependencies.length}\n`;
+      reportContent += `- **Duplicate Dependencies**: ${results.bundleAnalysis.duplicateDependencies.length}\n\n`;
+    }
+    
+    // Add AI recommendations
+    reportContent += `## AI Recommendations\n\n`;
+    reportContent += `${results.recommendations.summary}\n\n`;
+    
+    // Add detailed recommendations
+    reportContent += `## Detailed Recommendations\n\n`;
+    results.recommendations.recommendations.forEach((recommendation, index) => {
+      reportContent += `### Recommendation ${index + 1}\n\n`;
+      reportContent += `${cleanRecommendationText(recommendation)}\n\n`;
+    });
+    
+    // Convert to HTML for download (simple formatting)
+    const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PerfPilot AI Analysis Report</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    h1 { color: #0070f3; }
+    h2 { color: #0070f3; margin-top: 20px; }
+    h3 { margin-top: 15px; }
+    ul { margin-bottom: 15px; }
+  </style>
+</head>
+<body>
+  ${reportContent.replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\# (.*)/g, '<h1>$1</h1>')
+    .replace(/\#\# (.*)/g, '<h2>$1</h2>')
+    .replace(/\#\#\# (.*)/g, '<h3>$1</h3>')
+    .replace(/- (.*)/g, '<li>$1</li>')
+    .replace(/<li>/g, '<ul><li>')
+    .replace(/<\/li>/g, '</li></ul>')}
+</body>
+</html>
+    `;
+    
+    const dataUri = `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`;
+    const exportFileName = 'perfpilot-report.html';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileName);
+    linkElement.click();
+    
+    toast.success("Analysis report exported as HTML");
+  };
   
   // Function to format markdown with custom components
   const MarkdownComponents: Components = {
@@ -226,10 +326,23 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   if (results.bundleAnalysis && !results.analysis) {
     return (
       <div className="space-y-8">
-        <Button variant="ghost" onClick={onReset} className="pl-0">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Analysis
-        </Button>
+        <div className="flex justify-between items-center">
+          <Button variant="ghost" onClick={onReset} className="pl-0">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Analysis
+          </Button>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportAsJson}>
+              <Download className="mr-2 h-4 w-4" />
+              Export JSON
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportAsReport}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Export Report
+            </Button>
+          </div>
+        </div>
         
         <Card>
           <CardHeader>
@@ -274,10 +387,23 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   if (!results.analysis) {
     return (
       <div className="space-y-8">
-        <Button variant="ghost" onClick={onReset} className="pl-0">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Analysis
-        </Button>
+        <div className="flex justify-between items-center">
+          <Button variant="ghost" onClick={onReset} className="pl-0">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Analysis
+          </Button>
+          
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={exportAsJson}>
+              <Download className="mr-2 h-4 w-4" />
+              Export JSON
+            </Button>
+            <Button variant="outline" size="sm" onClick={exportAsReport}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Export Report
+            </Button>
+          </div>
+        </div>
         
         <Card>
           <CardHeader>
@@ -422,10 +548,23 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
   
   return (
     <div className="space-y-8">
-      <Button variant="ghost" onClick={onReset} className="pl-0">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Analysis
-      </Button>
+      <div className="flex justify-between items-center">
+        <Button variant="ghost" onClick={onReset} className="pl-0">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Analysis
+        </Button>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={exportAsJson}>
+            <Download className="mr-2 h-4 w-4" />
+            Export JSON
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportAsReport}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Export Report
+          </Button>
+        </div>
+      </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid grid-cols-4">
