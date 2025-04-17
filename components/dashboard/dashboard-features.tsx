@@ -26,7 +26,7 @@ export function DashboardFeatures() {
             <Package className="h-12 w-12 text-primary" />
             <h3 className="text-xl font-bold">Bundle Size Analysis</h3>
             <p className="text-center text-muted-foreground">
-              Analyze your package.json to identify heavy dependencies and optimize your application's bundle size.
+              Analyze your package.json to identify heavy dependencies and optimize your application&apos;s bundle size.
             </p>
           </div>
           <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">

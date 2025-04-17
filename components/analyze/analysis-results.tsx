@@ -7,19 +7,21 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AnalysisResult } from "@/lib/analysis/analyzer";
 import { AlertTriangle, CheckCircle, Info, ArrowLeft, Zap, FileCode, ExternalLink, BarChart, BookOpen, Copy, LineChart } from 'lucide-react';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Badge } from "@/components/ui/badge";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import rehypeSanitize from 'rehype-sanitize';
-import { Components } from 'react-markdown';
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import PerformanceCharts from "@/components/charts/PerformanceCharts";
+import Image from "next/image";
+import { BundleAnalysisResult } from "@/lib/analysis/bundle-analyzer";
+import { BundleAnalysis } from "@/components/analyze/bundle-analysis";
 
 // Add type declaration for modules without declaration files
 declare module 'react-syntax-highlighter';
@@ -41,153 +43,35 @@ interface AnalysisResultsProps {
       summary: string;
       recommendations: string[];
     };
-    bundleAnalysis?: any;
+    bundleAnalysis?: BundleAnalysisResult;
   };
   onReset: () => void;
 }
 
 export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
-  // If there's no analysis, just show recommendations
-  if (!results.analysis) {
-    return (
-      <div className="space-y-8">
-        <Button variant="ghost" onClick={onReset} className="pl-0">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Analysis
-        </Button>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>AI Recommendations</CardTitle>
-            <CardDescription>
-              Recommendations for your code
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg bg-muted p-5">
-              <div className="markdown-content">
-                <ReactMarkdown 
-                  remarkPlugins={[remarkGfm]} 
-                  rehypePlugins={[rehypeRaw, rehypeSanitize]}
-                >
-                  {results.recommendations.summary}
-                </ReactMarkdown>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  
-  // Check if we have multi-file results
-  const isMultiFile = results.analysis && 'fileResults' in results.analysis;
-  
-  // Get the summary data
-  const summary = isMultiFile && 'aggregateSummary' in results.analysis 
-    ? results.analysis.aggregateSummary 
-    : (results.analysis as AnalysisResult).summary;
-  
-  // Get file results for multi-file analysis
-  const fileResults = isMultiFile && 'fileResults' in results.analysis
-    ? results.analysis.fileResults 
-    : { "single-file": results.analysis as AnalysisResult };
-  
-  const fileNames = Object.keys(fileResults);
-  const [activeFile, setActiveFile] = useState(fileNames[0]);
+  // State for active file and tab - these must be defined outside conditionals
+  const [activeFile, setActiveFile] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("overview");
   
-  // Calculate performance score based on issues
-  const calculatePerformanceScore = () => {
-    if (summary.totalIssues === 0) return 100;
-    
-    // Weight different severity levels
-    const criticalWeight = 5;
-    const warningWeight = 2;
-    const infoWeight = 0.5;
-    
-    const weightedIssues = 
-      (summary.criticalIssues * criticalWeight) + 
-      (summary.warningIssues * warningWeight) + 
-      (summary.infoIssues * infoWeight);
-    
-    // Base score is 100, subtract weighted issues
-    // Calculate a score between 0-100
-    const baseScore = 100;
-    const score = Math.max(0, Math.min(100, baseScore - (weightedIssues / 5) * 10));
-    
-    return Math.round(score);
-  };
-  
-  const performanceScore = calculatePerformanceScore();
-  
-  // Get performance badge based on score
-  const getPerformanceBadge = (score: number) => {
-    if (score >= 90) return { label: "Excellent", color: "bg-green-500" };
-    if (score >= 75) return { label: "Good", color: "bg-green-400" };
-    if (score >= 60) return { label: "Moderate", color: "bg-yellow-400" };
-    if (score >= 40) return { label: "Needs Improvement", color: "bg-orange-500" };
-    return { label: "Poor", color: "bg-red-500" };
-  };
-  
-  const performanceBadge = getPerformanceBadge(performanceScore);
-  
-  const getSeverityIcon = (severity: string) => {
-    switch (severity) {
-      case 'critical':
-        return <AlertTriangle className="h-5 w-5 text-destructive" />;
-      case 'warning':
-        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
-      case 'info':
-        return <Info className="h-5 w-5 text-blue-500" />;
-      default:
-        return <Info className="h-5 w-5" />;
+  // All hooks must be called at the top level, before any conditional returns
+  useEffect(() => {
+    if (results.analysis) {
+      // Check if we have multi-file results
+      const isMultiFile = 'fileResults' in results.analysis;
+      
+      // Get file results for multi-file analysis
+      const fileResults = isMultiFile && 'fileResults' in results.analysis
+        ? results.analysis.fileResults 
+        : { "single-file": results.analysis as AnalysisResult };
+      
+      const fileNames = Object.keys(fileResults);
+      
+      if (fileNames.length > 0 && !activeFile) {
+        setActiveFile(fileNames[0]);
+      }
     }
-  };
-
-  // Function to determine recommendation priority based on content
-  const getRecommendationPriority = (recommendation: string) => {
-    const lowerCaseRec = recommendation.toLowerCase();
-    if (
-      lowerCaseRec.includes('critical') || 
-      lowerCaseRec.includes('significant') || 
-      lowerCaseRec.includes('important') ||
-      lowerCaseRec.includes('high priority')
-    ) {
-      return 'high';
-    } else if (
-      lowerCaseRec.includes('consider') || 
-      lowerCaseRec.includes('might') || 
-      lowerCaseRec.includes('could') ||
-      lowerCaseRec.includes('low priority')
-    ) {
-      return 'low';
-    }
-    return 'medium';
-  };
-
-  // Function to extract code examples from recommendation text
-  const extractCodeExample = (recommendation: string) => {
-    // Match code blocks with or without language specification
-    // Support more language identifiers and handle whitespace
-    const codeBlockRegex = /```(?:jsx?|tsx?|javascript|typescript|js|ts|html|css|json|bash|shell|sh)?([^`]+)```/g;
-    const matches = [...recommendation.matchAll(codeBlockRegex)];
-    if (matches.length > 0) {
-      // Return the first code block by default
-      return matches[0][1].trim();
-    }
-    return null;
-  };
-
-  // Function to clean recommendation text by removing code blocks
-  const cleanRecommendationText = (recommendation: string) => {
-    // We'll preserve the original text but replace code blocks with markers
-    return recommendation
-      .replace(/```(?:jsx?|tsx?|javascript|typescript|js|ts|html|css|json|bash|shell|sh)?([^`]+)```/g, '')
-      .replace(/\n\n+/g, '\n\n') // Replace multiple newlines with just two
-      .trim();
-  };
-
+  }, [results.analysis, activeFile]);
+  
   // Function to format markdown with custom components
   const MarkdownComponents: Components = {
     // Style links
@@ -321,10 +205,12 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
     ),
     // Handle images
     img: ({ className, ...props }) => (
-      <img 
+      <Image 
         className={`max-w-full h-auto my-4 rounded ${className || ''}`}
         alt={props.alt || "Image"}
-        {...props} 
+        width={500}
+        height={300}
+        src={props.src || ""}
       />
     ),
     // Handle horizontal rules
@@ -334,6 +220,194 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         {...props} 
       />
     ),
+  };
+  
+  // Handle bundle-only analysis (when only bundleAnalysis is available without code analysis)
+  if (results.bundleAnalysis && !results.analysis) {
+    return (
+      <div className="space-y-8">
+        <Button variant="ghost" onClick={onReset} className="pl-0">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Analysis
+        </Button>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Bundle Analysis Results</CardTitle>
+            <CardDescription>
+              Analysis of your package.json dependencies
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BundleAnalysis analysis={results.bundleAnalysis} />
+          </CardContent>
+        </Card>
+        
+        {results.recommendations && (
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Recommendations</CardTitle>
+              <CardDescription>
+                Suggestions for optimizing your dependencies
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg bg-muted p-5">
+                <div className="markdown-content">
+                  <ReactMarkdown 
+                    remarkPlugins={[remarkGfm]} 
+                    rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                    components={MarkdownComponents}
+                  >
+                    {results.recommendations.summary}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+  
+  // If there's no analysis, just show recommendations
+  if (!results.analysis) {
+    return (
+      <div className="space-y-8">
+        <Button variant="ghost" onClick={onReset} className="pl-0">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Analysis
+        </Button>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Recommendations</CardTitle>
+            <CardDescription>
+              Recommendations for your code
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg bg-muted p-5">
+              <div className="markdown-content">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]} 
+                  rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                  components={MarkdownComponents}
+                >
+                  {results.recommendations?.summary || "No recommendations available."}
+                </ReactMarkdown>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  // Check if we have multi-file results
+  const isMultiFile = results.analysis && 'fileResults' in results.analysis;
+  
+  // Get the summary data
+  const summary = isMultiFile && 'aggregateSummary' in results.analysis 
+    ? results.analysis.aggregateSummary 
+    : (results.analysis as AnalysisResult).summary;
+  
+  // Get file results for multi-file analysis
+  const fileResults = isMultiFile && 'fileResults' in results.analysis
+    ? results.analysis.fileResults 
+    : { "single-file": results.analysis as AnalysisResult };
+  
+  const fileNames = Object.keys(fileResults);
+  
+  // Calculate performance score based on issues
+  const calculatePerformanceScore = () => {
+    if (summary.totalIssues === 0) return 100;
+    
+    // Weight different severity levels
+    const criticalWeight = 5;
+    const warningWeight = 2;
+    const infoWeight = 0.5;
+    
+    const weightedIssues = 
+      (summary.criticalIssues * criticalWeight) + 
+      (summary.warningIssues * warningWeight) + 
+      (summary.infoIssues * infoWeight);
+    
+    // Base score is 100, subtract weighted issues
+    // Calculate a score between 0-100
+    const baseScore = 100;
+    const score = Math.max(0, Math.min(100, baseScore - (weightedIssues / 5) * 10));
+    
+    return Math.round(score);
+  };
+  
+  const performanceScore = calculatePerformanceScore();
+  
+  // Get performance badge based on score
+  const getPerformanceBadge = (score: number) => {
+    if (score >= 90) return { label: "Excellent", color: "bg-green-500" };
+    if (score >= 75) return { label: "Good", color: "bg-green-400" };
+    if (score >= 60) return { label: "Moderate", color: "bg-yellow-400" };
+    if (score >= 40) return { label: "Needs Improvement", color: "bg-orange-500" };
+    return { label: "Poor", color: "bg-red-500" };
+  };
+  
+  const performanceBadge = getPerformanceBadge(performanceScore);
+  
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return <AlertTriangle className="h-5 w-5 text-destructive" />;
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+      case 'info':
+        return <Info className="h-5 w-5 text-blue-500" />;
+      default:
+        return <Info className="h-5 w-5" />;
+    }
+  };
+
+  // Function to determine recommendation priority based on content
+  const getRecommendationPriority = (recommendation: string) => {
+    const lowerCaseRec = recommendation.toLowerCase();
+    if (
+      lowerCaseRec.includes('critical') || 
+      lowerCaseRec.includes('significant') || 
+      lowerCaseRec.includes('important') ||
+      lowerCaseRec.includes('high priority')
+    ) {
+      return 'high';
+    } else if (
+      lowerCaseRec.includes('consider') || 
+      lowerCaseRec.includes('might') || 
+      lowerCaseRec.includes('could') ||
+      lowerCaseRec.includes('low priority')
+    ) {
+      return 'low';
+    }
+    return 'medium';
+  };
+
+  // Function to extract code examples from recommendation text
+  const extractCodeExample = (recommendation: string) => {
+    // Match code blocks with or without language specification
+    // Support more language identifiers and handle whitespace
+    const codeBlockRegex = /```(?:jsx?|tsx?|javascript|typescript|js|ts|html|css|json|bash|shell|sh)?([^`]+)```/g;
+    const matches = [...recommendation.matchAll(codeBlockRegex)];
+    if (matches.length > 0) {
+      // Return the first code block by default
+      return matches[0][1].trim();
+    }
+    return null;
+  };
+
+  // Function to clean recommendation text by removing code blocks
+  const cleanRecommendationText = (recommendation: string) => {
+    // We'll preserve the original text but replace code blocks with markers
+    return recommendation
+      .replace(/```(?:jsx?|tsx?|javascript|typescript|js|ts|html|css|json|bash|shell|sh)?([^`]+)```/g, '')
+      .replace(/\n\n+/g, '\n\n') // Replace multiple newlines with just two
+      .trim();
   };
 
   // Function to copy code to clipboard
@@ -658,7 +732,8 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                 <Tabs defaultValue={activeFile} onValueChange={setActiveFile}>
                   <TabsList className="mb-4 w-full overflow-x-auto flex-nowrap">
                     {fileNames.map(fileName => {
-                      const issueCount = fileResults[fileName].issues.length;
+                      const fileResult = fileResults[fileName] || { issues: [] };
+                      const issueCount = fileResult.issues?.length || 0;
                       return (
                         <TabsTrigger key={fileName} value={fileName} className="flex items-center gap-1">
                           <FileCode className="h-4 w-4" />
@@ -674,8 +749,8 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                   </TabsList>
                   
                   <div className="space-y-6">
-                    {fileResults[activeFile].issues.length > 0 ? (
-                      fileResults[activeFile].issues.map((issue, index) => (
+                    {(fileResults[activeFile]?.issues || []).length > 0 ? (
+                      (fileResults[activeFile]?.issues || []).map((issue, index) => (
                         <div key={index}>
                           {index > 0 && <Separator className="my-4" />}
                           <div className="flex items-start gap-3">
@@ -763,8 +838,8 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
                 </Tabs>
               ) : (
                 <div className="space-y-6">
-                  {fileResults[fileNames[0]].issues.length > 0 ? (
-                    fileResults[fileNames[0]].issues.map((issue, index) => (
+                  {(fileResults[fileNames[0]]?.issues || []).length > 0 ? (
+                    (fileResults[fileNames[0]]?.issues || []).map((issue, index) => (
                       <div key={index}>
                         {index > 0 && <Separator className="my-4" />}
                         <div className="flex items-start gap-3">

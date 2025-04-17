@@ -28,7 +28,8 @@ function isPackageJsonFile(fileName: string, content: string): boolean {
       console.log(`File ${fileName} identified as package.json by content (has dependencies)`);
       return true;
     }
-  } catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  } catch (_) {
     // If we can't parse the JSON, it's not a valid package.json
     console.log(`File ${fileName} doesn't appear to be valid JSON`);
   }
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       };
       
       // Preload file contents for efficient analysis
-      let fileContents: Record<string, string> = {};
+      const fileContents: Record<string, string> = {};
       await Promise.all(files.map(async (file) => {
         const content = await file.text();
         fileContents[file.name] = content;

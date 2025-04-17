@@ -1,5 +1,3 @@
-import { PerformanceRule } from './rules';
-
 // Define the structure for a bundle analysis result
 export interface BundleAnalysisResult {
   totalDependencies: number;
@@ -40,6 +38,13 @@ export interface TreeshakingIssue {
   dependency: string;
   importStatement: string;
   recommendation: string;
+}
+
+// Define the interface for package.json structure
+interface PackageJson {
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  [key: string]: unknown;
 }
 
 // Common heavy dependencies known to cause bundle size issues in Next.js
@@ -121,7 +126,7 @@ function cleanJsonContent(jsonContent: string): string {
 export async function analyzeBundleSize(packageJsonContent: string): Promise<BundleAnalysisResult> {
   console.log('Starting bundle analysis, content length:', packageJsonContent.length);
   
-  let packageJson: any;
+  let packageJson: PackageJson;
   
   try {
     // First try simple JSON parse

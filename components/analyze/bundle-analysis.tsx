@@ -1,10 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BundleAnalysisResult, HeavyDependency, UnnecessaryDependency, DuplicateDependency, TreeshakingIssue } from "@/lib/analysis/bundle-analyzer";
-import { BarChart, Check, FileDown, FileWarning, HardDriveDownload, Hexagon, Layers, Package, PackageOpen, Scale, XCircle } from "lucide-react";
+import { BundleAnalysisResult } from "@/lib/analysis/bundle-analyzer";
+import { BarChart, Check, FileDown, FileWarning, HardDriveDownload, Hexagon, Layers, Package, Scale, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"; 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
@@ -12,10 +11,9 @@ import { toast } from "sonner";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
-  PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
+  PieChart, Pie, Cell, ResponsiveContainer,
   XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend,
-  BarChart as RechartsBarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis,
-  PolarRadiusAxis, Radar
+  BarChart as RechartsBarChart, Bar
 } from 'recharts';
 
 interface BundleAnalysisProps {
