@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { getAnalysisHistory, deleteAnalysisRecord, clearAnalysisHistory, AnalysisHistoryRecord } from "@/lib/storage";
@@ -8,22 +8,26 @@ import { format } from "date-fns";
 import dynamic from "next/dynamic";
 import { 
   ArchiveX, 
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from "next/link";
 import { toast } from "sonner";
 
-// Dynamically import recharts components individually
-const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), { ssr: false });
-const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false });
-const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
-const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
-const BarChart = dynamic(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
-const Bar = dynamic(() => import('recharts').then(mod => mod.Bar), { ssr: false });
+// Import Recharts components directly for reliable rendering
+// We trade a little bundle size for guaranteed functionality
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip as RechartsTooltip, 
+  ResponsiveContainer,
+  BarChart,
+  Bar
+} from "recharts";
 
 // Create a combined object for the chart components
 const ChartComponents = {
@@ -32,28 +36,49 @@ const ChartComponents = {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip: RechartsTooltip,
   ResponsiveContainer,
   BarChart,
   Bar
 };
 
-// Dynamically import tab contents to reduce initial bundle size
-const OverviewTabContent = dynamic(() => import("./tabs/overview-tab"), { ssr: true, loading: () => null });
-const HistoryTabContent = dynamic(() => import("./tabs/history-tab"), { ssr: false, loading: () => null });
-const TrendsTabContent = dynamic(() => import("./tabs/trends-tab"), { ssr: false, loading: () => null });
+// Loading component for dynamic tab content
+const TabLoading = () => (
+  <div className="flex justify-center items-center py-12">
+    <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+  </div>
+);
+
+// Dynamically import tab contents with proper loading states
+const OverviewTabContent = dynamic(() => import("./tabs/overview-tab"), { 
+  loading: () => <TabLoading />,
+  ssr: true 
+});
+
+const HistoryTabContent = dynamic(() => import("./tabs/history-tab"), { 
+  loading: () => <TabLoading />,
+  ssr: false 
+});
+
+const TrendsTabContent = dynamic(() => import("./tabs/trends-tab"), { 
+  loading: () => <TabLoading />,
+  ssr: false 
+});
 
 export default function DashboardView() {
   const [history, setHistory] = useState<AnalysisHistoryRecord[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<AnalysisHistoryRecord | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load history on component mount
   useEffect(() => {
     const loadHistory = () => {
+      setIsLoading(true);
       const analysisHistory = getAnalysisHistory();
       setHistory(analysisHistory);
+      setIsLoading(false);
     };
 
     loadHistory();
@@ -170,6 +195,25 @@ export default function DashboardView() {
     </div>
   );
 
+  // Loading state for initial data load
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Track your performance improvements over time
+            </p>
+          </div>
+        </div>
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -226,7 +270,7 @@ export default function DashboardView() {
             </div>
 
             <TabsContent value="overview" className="space-y-6">
-              {activeTab === "overview" && (
+              <Suspense fallback={<TabLoading />}>
                 <OverviewTabContent 
                   history={history} 
                   selectedRecord={selectedRecord} 
@@ -237,11 +281,11 @@ export default function DashboardView() {
                   formatDate={formatDate}
                   setActiveTab={setActiveTab}
                 />
-              )}
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="history" className="space-y-6">
-              {activeTab === "history" && (
+              <Suspense fallback={<TabLoading />}>
                 <HistoryTabContent 
                   history={filteredHistory}
                   searchTerm={searchTerm}
@@ -251,18 +295,18 @@ export default function DashboardView() {
                   getScoreBadgeColor={getScoreBadgeColor}
                   formatDate={formatDate}
                 />
-              )}
+              </Suspense>
             </TabsContent>
 
             <TabsContent value="trends" className="space-y-6">
-              {activeTab === "trends" && (
+              <Suspense fallback={<TabLoading />}>
                 <TrendsTabContent 
                   history={history}
                   ChartComponents={ChartComponents}
                   preparePerformanceData={preparePerformanceData}
                   prepareCategoryData={prepareCategoryData}
                 />
-              )}
+              </Suspense>
             </TabsContent>
           </Tabs>
         </>

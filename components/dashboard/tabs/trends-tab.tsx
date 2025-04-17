@@ -6,20 +6,18 @@ import { AnalysisHistoryRecord } from "@/lib/storage";
 import { LineChart as LineChartIcon, ListChecks } from "lucide-react";
 import Link from "next/link";
 
-// Define types for chart components
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Define types for chart components - use proper typing for Recharts
 interface ChartComponentsType {
-  LineChart: React.ComponentType<any>;
-  Line: React.ComponentType<any>;
-  XAxis: React.ComponentType<any>;
-  YAxis: React.ComponentType<any>;
-  CartesianGrid: React.ComponentType<any>;
-  Tooltip: React.ComponentType<any>;
-  ResponsiveContainer: React.ComponentType<any>;
-  BarChart: React.ComponentType<any>;
-  Bar: React.ComponentType<any>;
+  LineChart: React.ComponentType<React.ComponentProps<typeof import('recharts').LineChart>>;
+  Line: React.ComponentType<React.ComponentProps<typeof import('recharts').Line>>;
+  XAxis: React.ComponentType<React.ComponentProps<typeof import('recharts').XAxis>>;
+  YAxis: React.ComponentType<React.ComponentProps<typeof import('recharts').YAxis>>;
+  CartesianGrid: React.ComponentType<React.ComponentProps<typeof import('recharts').CartesianGrid>>;
+  Tooltip: React.ComponentType<React.ComponentProps<typeof import('recharts').Tooltip>>;
+  ResponsiveContainer: React.ComponentType<React.ComponentProps<typeof import('recharts').ResponsiveContainer>>;
+  BarChart: React.ComponentType<React.ComponentProps<typeof import('recharts').BarChart>>;
+  Bar: React.ComponentType<React.ComponentProps<typeof import('recharts').Bar>>;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 interface TrendsTabProps {
   history: AnalysisHistoryRecord[];
@@ -41,6 +39,10 @@ export default function TrendsTabContent({
   preparePerformanceData,
   prepareCategoryData
 }: TrendsTabProps) {
+  // Make sure the chart state exists even with no data
+  const performanceData = preparePerformanceData();
+  const categoryData = prepareCategoryData();
+  
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <Card className="md:col-span-2">
@@ -55,7 +57,7 @@ export default function TrendsTabContent({
             {history.length > 1 ? (
               <ChartComponents.ResponsiveContainer width="100%" height="100%">
                 <ChartComponents.LineChart
-                  data={preparePerformanceData()}
+                  data={performanceData}
                   margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
                 >
                   <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="#666" opacity={0.2} />
@@ -106,7 +108,7 @@ export default function TrendsTabContent({
             <CardContent>
               <div className="h-[300px]">
                 <ChartComponents.ResponsiveContainer width="100%" height="100%">
-                  <ChartComponents.BarChart data={prepareCategoryData()}>
+                  <ChartComponents.BarChart data={categoryData}>
                     <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="#666" opacity={0.2} />
                     <ChartComponents.XAxis dataKey="name" />
                     <ChartComponents.YAxis />

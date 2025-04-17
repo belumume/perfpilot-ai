@@ -14,20 +14,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// Define types for chart components
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// Define types for chart components - use proper typing for Recharts
 interface ChartComponentsType {
-  LineChart: React.ComponentType<any>;
-  Line: React.ComponentType<any>;
-  XAxis: React.ComponentType<any>;
-  YAxis: React.ComponentType<any>;
-  CartesianGrid: React.ComponentType<any>;
-  Tooltip: React.ComponentType<any>;
-  ResponsiveContainer: React.ComponentType<any>;
-  BarChart: React.ComponentType<any>;
-  Bar: React.ComponentType<any>;
+  LineChart: React.ComponentType<React.ComponentProps<typeof import('recharts').LineChart>>;
+  Line: React.ComponentType<React.ComponentProps<typeof import('recharts').Line>>;
+  XAxis: React.ComponentType<React.ComponentProps<typeof import('recharts').XAxis>>;
+  YAxis: React.ComponentType<React.ComponentProps<typeof import('recharts').YAxis>>;
+  CartesianGrid: React.ComponentType<React.ComponentProps<typeof import('recharts').CartesianGrid>>;
+  Tooltip: React.ComponentType<React.ComponentProps<typeof import('recharts').Tooltip>>;
+  ResponsiveContainer: React.ComponentType<React.ComponentProps<typeof import('recharts').ResponsiveContainer>>;
+  BarChart: React.ComponentType<React.ComponentProps<typeof import('recharts').BarChart>>;
+  Bar: React.ComponentType<React.ComponentProps<typeof import('recharts').Bar>>;
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 interface OverviewTabProps {
   history: AnalysisHistoryRecord[];
@@ -54,6 +52,9 @@ export default function OverviewTabContent({
   formatDate,
   setActiveTab
 }: OverviewTabProps) {
+  // Make sure we have data for the chart
+  const performanceData = preparePerformanceData();
+  
   return (
     <>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,7 +209,7 @@ export default function OverviewTabContent({
               {history.length > 1 ? (
                 <ChartComponents.ResponsiveContainer width="100%" height="100%">
                   <ChartComponents.LineChart
-                    data={preparePerformanceData()}
+                    data={performanceData}
                     margin={{ top: 20, right: 30, left: 0, bottom: 0 }}
                   >
                     <ChartComponents.CartesianGrid strokeDasharray="3 3" stroke="#666" opacity={0.2} />
