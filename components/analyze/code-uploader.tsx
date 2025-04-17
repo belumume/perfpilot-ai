@@ -13,9 +13,9 @@ interface CodeUploaderProps {
 
 export function CodeUploader({ files, setFiles }: CodeUploaderProps) {
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    // Filter for JavaScript, TypeScript, JSX, TSX files
+    // Filter for JavaScript, TypeScript, JSX, TSX, and JSON files
     const jsFiles = acceptedFiles.filter(file => 
-      /\.(js|jsx|ts|tsx)$/.test(file.name)
+      /\.(js|jsx|ts|tsx|json)$/.test(file.name)
     );
     
     setFiles((prev: File[]) => [...prev, ...jsFiles]);
@@ -26,6 +26,7 @@ export function CodeUploader({ files, setFiles }: CodeUploaderProps) {
     accept: {
       'application/javascript': ['.js', '.jsx'],
       'text/typescript': ['.ts', '.tsx'],
+      'application/json': ['.json']
     }
   });
   
@@ -46,7 +47,7 @@ export function CodeUploader({ files, setFiles }: CodeUploaderProps) {
           <Upload className="h-10 w-10 text-muted-foreground" />
           <h3 className="font-medium text-lg">Drag & drop files here</h3>
           <p className="text-sm text-muted-foreground">
-            or click to browse (.js, .jsx, .ts, .tsx)
+            or click to browse (.js, .jsx, .ts, .tsx, .json)
           </p>
         </div>
       </div>

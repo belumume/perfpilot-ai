@@ -1,5 +1,5 @@
 // components/dashboard/dashboard-features.tsx
-import { Gauge, Zap, Image as ImageIcon, FileCode, Box, BarChart, Cpu, LineChart, Sparkles } from 'lucide-react';
+import { Gauge, Zap, Image as ImageIcon, FileCode, Box, BarChart, Cpu, LineChart, Sparkles, Package, Scale, ArrowDownToLine } from 'lucide-react';
 
 export function DashboardFeatures() {
   return (
@@ -19,6 +19,16 @@ export function DashboardFeatures() {
           </div>
         </div>
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 py-12 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col items-center space-y-2 rounded-lg border-2 border-primary p-6 shadow-md relative overflow-hidden">
+            <div className="absolute top-0 right-0">
+              <span className="bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-bl-md">NEW</span>
+            </div>
+            <Package className="h-12 w-12 text-primary" />
+            <h3 className="text-xl font-bold">Bundle Size Analysis</h3>
+            <p className="text-center text-muted-foreground">
+              Analyze your package.json to identify heavy dependencies and optimize your application's bundle size.
+            </p>
+          </div>
           <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
             <Gauge className="h-12 w-12 text-primary" />
             <h3 className="text-xl font-bold">Performance Analysis</h3>
@@ -31,6 +41,20 @@ export function DashboardFeatures() {
             <h3 className="text-xl font-bold">AI Recommendations</h3>
             <p className="text-center text-muted-foreground">
               Get AI-powered, priority-ranked recommendations to improve your application&apos;s speed.
+            </p>
+          </div>
+          <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
+            <Scale className="h-12 w-12 text-primary" />
+            <h3 className="text-xl font-bold">Dependency Insights</h3>
+            <p className="text-center text-muted-foreground">
+              Identify heavy dependencies, unnecessary packages, and duplicate functionality in your project.
+            </p>
+          </div>
+          <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">
+            <ArrowDownToLine className="h-12 w-12 text-primary" />
+            <h3 className="text-xl font-bold">Tree Shaking Analysis</h3>
+            <p className="text-center text-muted-foreground">
+              Detect import patterns that prevent effective tree shaking and increase your bundle size.
             </p>
           </div>
           <div className="flex flex-col items-center space-y-2 rounded-lg border p-6 shadow-sm">

@@ -27,7 +27,7 @@ declare module 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface AnalysisResultsProps {
   results: {
-    analysis: AnalysisResult | {
+    analysis?: AnalysisResult | {
       fileResults: Record<string, AnalysisResult>;
       aggregateSummary: {
         totalIssues: number;
@@ -41,11 +41,45 @@ interface AnalysisResultsProps {
       summary: string;
       recommendations: string[];
     };
+    bundleAnalysis?: any;
   };
   onReset: () => void;
 }
 
 export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
+  // If there's no analysis, just show recommendations
+  if (!results.analysis) {
+    return (
+      <div className="space-y-8">
+        <Button variant="ghost" onClick={onReset} className="pl-0">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Analysis
+        </Button>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Recommendations</CardTitle>
+            <CardDescription>
+              Recommendations for your code
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg bg-muted p-5">
+              <div className="markdown-content">
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm]} 
+                  rehypePlugins={[rehypeRaw, rehypeSanitize]}
+                >
+                  {results.recommendations.summary}
+                </ReactMarkdown>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
   // Check if we have multi-file results
   const isMultiFile = results.analysis && 'fileResults' in results.analysis;
   
