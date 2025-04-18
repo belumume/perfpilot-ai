@@ -12,21 +12,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    // Enable Partial Prerendering for better performance
     ppr: true,
-    
-    // These are important for EdgeRuntime streaming
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
   },
-  // Server external packages moved to root level as per warning
-  serverExternalPackages: [],
   images: {
     domains: ['images.unsplash.com'],
   },
-  // Configure Edge Runtime properly
-  reactStrictMode: true,
 };
 
 module.exports = nextConfig; 
