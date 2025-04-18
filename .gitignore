@@ -40,8 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# documentation
-Next.js Hackathon Project Planning_.md
-
+main
 # cursor ignore
 .cursorignore
