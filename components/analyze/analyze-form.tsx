@@ -152,11 +152,15 @@ export function AnalyzeForm() {
                       value={fileName}
                       onChange={(e) => setFileName(e.target.value)}
                     />
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Type "package.json" for bundle analysis or use any other name for code analysis.
+                    </p>
                   </div>
                 </div>
                 <CodeInput 
                   code={inputCode} 
                   setCode={setInputCode} 
+                  isPackageJson={fileName === "package.json"}
                 />
               </div>
             </TabsContent>
