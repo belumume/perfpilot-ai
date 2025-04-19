@@ -10,7 +10,7 @@ PerfPilot AI is an intelligent tool designed to analyze Next.js applications, id
 
 ## 📹 Demo Video
 
-> ![Demo Video](demo/demo_video.mp4)
+> ![Demo Video](https://youtu.be/5VlT38t_8zo)
 
 ## 🚀 Features
 
