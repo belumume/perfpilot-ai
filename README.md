@@ -10,7 +10,7 @@ PerfPilot AI is an intelligent tool designed to analyze Next.js applications, id
 
 ## 📹 Demo Video
 
-> **Coming Soon!** Watch our demo video to see PerfPilot AI in action. The video will demonstrate the key features, analysis process, and how the tool can help optimize your Next.js applications.
+> ![Demo Video](demo/demo_video.mp4)
 
 ## 🚀 Features
 
@@ -157,8 +157,8 @@ PerfPilot AI is an entry for the Next.js Global Hackathon 2025. The project aims
 - **Highest Quality App**: With attention to design detail, accessibility, and user experience
 
 For more details about our hackathon strategy and implementation plan, see:
-- [Next.js Hackathon Project Planning](Next.js%20Hackathon%20Project%20Planning_.md)
-- [PerfPilot AI - Development Summary & Context](PerfPilot%20AI%20-%20Development%20Summary%20%26%20Context.md)
+- [Next.js Hackathon Project Planning](docs/Next.js%20Hackathon%20Project%20Planning_.md)
+- [PerfPilot AI - Development Summary & Context](docs/PerfPilot%20AI%20-%20Development%20Summary%20&%20Context.md)
 
 ## 📝 License
 
