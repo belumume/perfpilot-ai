@@ -162,9 +162,9 @@ For more details about our hackathon strategy and implementation plan, see:
 - [Next.js Hackathon Project Planning](docs/Next.js%20Hackathon%20Project%20Planning_.md)
 - [PerfPilot AI - Development Summary & Context](docs/PerfPilot%20AI%20-%20Development%20Summary%20&%20Context.md)
 
-## 📝 License
+## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE). - see the LICENSE file for details.
 
 ## 🙏 Acknowledgements
 
