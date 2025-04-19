@@ -164,7 +164,7 @@ For more details about our hackathon strategy and implementation plan, see:
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). - see the LICENSE file for details.
+This project is licensed under the [MIT License](LICENSE) - see the LICENSE file for details.
 
 ## 🙏 Acknowledgements
 
