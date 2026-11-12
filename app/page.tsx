@@ -5,9 +5,6 @@ import { DashboardFeatures } from "@/components/dashboard/dashboard-features";
 import { DashboardCTA } from "@/components/dashboard/dashboard-cta";
 import { Suspense } from "react";
 
-// Enable Partial Prerendering for better initial load performance
-export const experimental_ppr = true;
-
 export default function Home() {
   return (
     <MainLayout>

@@ -91,7 +91,7 @@ const ScoreAreaChart = ({ score }: ScoreAreaChartProps) => {
           contentStyle={{ backgroundColor: 'rgba(24, 24, 27, 0.9)', border: 'none', borderRadius: '6px', padding: '8px 12px' }}
           itemStyle={{ color: '#e5e7eb' }}
           labelStyle={{ color: '#e5e7eb', fontWeight: 'bold', marginBottom: '4px' }}
-          formatter={(value, name, props) => [props.payload.zone, 'Zone']}
+          formatter={(value, name, props): [string, string] => [props.payload.zone, 'Zone']}
           labelFormatter={(value) => `Score: ${value}`}
         />
         <defs>
