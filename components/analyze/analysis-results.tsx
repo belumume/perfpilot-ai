@@ -331,7 +331,7 @@ export function AnalysisResults({ results, onReset }: AnalysisResultsProps) {
         alt={props.alt || "Image"}
         width={500}
         height={300}
-        src={props.src || ""}
+        src={typeof props.src === "string" ? props.src : ""}
       />
     ),
     // Handle horizontal rules

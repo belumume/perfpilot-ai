@@ -4,12 +4,6 @@ import { analyzeCode, AnalysisResult } from "@/lib/analysis/analyzer";
 import { generateRecommendations } from "@/lib/ai/generate-recommendations";
 import { analyzeBundleSize, analyzeTreeshaking } from "@/lib/analysis/bundle-analyzer";
 
-// Enable edge runtime for better performance
-export const runtime = 'edge';
-
-// Set long revalidation time for API responses
-export const revalidate = 3600; // 1 hour
-
 /**
  * Helper function to check if a file is likely a package.json file
  * Checks either if the name contains "package" or if the content has dependencies
